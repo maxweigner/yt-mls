@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS video (
+    filename TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS playlist (
+    name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS collection (
+    playlist INTEGER NOT NULL,
+    path TEXT NOT NULL
+);

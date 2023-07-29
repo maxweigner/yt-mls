@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, flash, redirect, url_for
-from flask_bootstrap import __version__ as BOOTSTRAP_VERSION
-from flask_nav3.elements import Navbar, View, Subgroup, Link, Text, Separator
-from markupsafe import escape
+from flask import Blueprint, render_template, send_from_directory, request, current_app, g
+from flask_nav3.elements import Navbar, View
+import sqlite3
+import os
 
 from nav import nav
 
@@ -16,21 +16,58 @@ nav.register_element('frontend_top', Navbar(
                      )
 
 
-@frontend.route('/')
+@frontend.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
 
 
-@frontend.route('/downloader')
+@frontend.route('/downloader', methods=['GET', 'POST'])
 def downloader():
-    return render_template('downloader.html')
+    if request.method == 'GET':
+        return render_template('downloader.html')
+    else:
+        return 'Hello there!'
 
 
-@frontend.route('/update')
+@frontend.route('/download/<path:file>', methods=['GET'])
+def download(file):
+    dir = os.path.join(current_app.root_path, 'downloads/')
+    return send_from_directory(dir, )
+
+
+@frontend.route('/update', methods=['GET', 'POST'])
 def updater():
     return render_template('updater.html')
 
 
-@frontend.route('/library')
+@frontend.route('/library', methods=['GET'])
 def library():
-    return render_template('library.html')
+    videos = query_db("SELECT name FROM video")
+    playlists = query_db("SELECT name FROM playlist")
+    return render_template('library.html', videos=videos, playlists=playlists)
+
+
+@frontend.route("/collection")
+def collection():
+    query = query_db("""
+            SELECT video.name FROM video
+            INNER JOIN collection ON collection.path = video.path
+            INNER JOIN playlist ON playlist.ROWID = collection.playlist
+            WHERE video.name IS ?;
+            """, ("",))
+    return render_template('collection.html', query=query)
+
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect('files.sqlite')
+    db.row_factory = sqlite3.Row
+    return db
+
+
+def query_db(query, args=(), one=False):
+    cur = get_db().execute(query, args)
+    res = cur.fetchall()
+    cur.close()
+    return (res[0] if res else None) if one else res

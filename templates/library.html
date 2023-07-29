@@ -3,15 +3,45 @@
 {% import "bootstrap/utils.html" as utils %}
 
 {% block content %}
-    <div class="container">
-        {%- with messages = get_flashed_messages(with_categories=True)  %}
-            {%- if messages %}
-                <div class="row">
-                    <div class="col-md-12">
-                        {{utils.flashed_messages(messages)}}
-                    </div>
-                </div>
-            {%- endif  %}
-        {%- endwith  %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-5">
+            <table id="videos" class="table">
+                <thead>
+                    <tr>
+                        <th scope="col" class="text-center">Song</th>
+                        <th scope="col" class="text-center">Download</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for video in videos %}
+                        <tr>
+                            <td class="text-center">{{ video['name'] }}</td>
+                            <td class="text-center">Link</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-md-1"></div>
+
+        <div class="col-md-2">
+            <table id="playlists" class="table">
+                <thead>
+                    <tr>
+                        <th scope="col" class="text-center">Playlists</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for playlist in playlists %}
+                        <tr>
+                            <td class="text-center">{{ playlist['name'] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
+</div>
 {%- endblock %}

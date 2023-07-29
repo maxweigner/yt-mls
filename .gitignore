@@ -352,3 +352,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+### Databse ###
+*.sqlite
