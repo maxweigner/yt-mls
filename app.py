@@ -1,8 +1,10 @@
 from flask import Flask, current_app, g
 from flask_bootstrap import Bootstrap
+from flask_wtf.csrf import CSRFProtect
 
 from frontend import frontend, get_db
 from nav import nav
+from os import urandom
 
 
 def init_db():
@@ -17,6 +19,9 @@ def create_app():
     Bootstrap(app)
 
     app.config['BOOTSTRAP_SERVE_LOCAL'] = True
+    app.config['SECRET_KEY'] = urandom(32)
+    CSRFProtect(app)
+
     app.register_blueprint(frontend)
     app.app_context().push()
     nav.init_app(app)

@@ -3,7 +3,9 @@ from flask_nav3.elements import Navbar, View
 import sqlite3
 import os
 
+import forms.download
 from nav import nav
+from forms.download import DownloadForm
 
 frontend = Blueprint('frontend', __name__)
 
@@ -23,16 +25,22 @@ def index():
 
 @frontend.route('/downloader', methods=['GET', 'POST'])
 def downloader():
-    if request.method == 'GET':
-        return render_template('downloader.html')
-    else:
-        return 'Hello there!'
+    form = DownloadForm()
+    if form.validate_on_submit():
+        # put here the interaction with youtube-dl
+        # or forward to site that shows details of yt link
+        url = form.url.data
+        return f"Hello There {url}"
+
+    return render_template('downloader.html', form=form)
 
 
 @frontend.route('/download/<path:file>', methods=['GET'])
 def download(file):
-    dir = os.path.join(current_app.root_path, 'downloads/')
-    return send_from_directory(dir, )
+    return send_from_directory(
+        os.path.join(current_app.root_path, 'downloads/'),
+        file
+    )
 
 
 @frontend.route('/update', methods=['GET', 'POST'])
@@ -51,7 +59,7 @@ def library():
 def collection():
     query = query_db("""
             SELECT video.name FROM video
-            INNER JOIN collection ON collection.path = video.path
+            INNER JOIN collection ON collection.path = video.filename
             INNER JOIN playlist ON playlist.ROWID = collection.playlist
             WHERE video.name IS ?;
             """, ("",))
