@@ -4,9 +4,9 @@
     <div class="container">
         <form method="POST">
             {{ form.csrf_token }}
-            <label for="url">Video, Channel or Playlist</label> <br>
-            <input id="url" name="url" required type="url" placeholder="YouTube Link">
-            <input type="submit" value="Go">
+            {{ form.url.label }} <br>
+            {{ form.url }}
+            {{ form.submit }}
         </form>
         {% if form.errors %}
         {{ form.errors['url'][0][:-1] + ', try again.' }}

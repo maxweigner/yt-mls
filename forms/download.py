@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import URLField
+from wtforms import URLField, SubmitField, Label
 from wtforms.validators import URL, DataRequired
 
 
 class DownloadForm(FlaskForm):
-    url = URLField('url', validators=[DataRequired(), URL()])
+    url = URLField('Video, Channel or Playlist', validators=[DataRequired(), URL()], render_kw={'placeholder': 'YouTube Link'})
+    submit = SubmitField('submit')
