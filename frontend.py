@@ -1,21 +1,25 @@
-from flask import Blueprint, render_template, send_from_directory, request, current_app, g
-from flask_nav3.elements import Navbar, View
-import sqlite3
-import os
+from __future__ import unicode_literals
 
-import forms.download
-from nav import nav
+import os
+import sqlite3
+import yt_dlp as ydl
+
+from flask import Blueprint, render_template, send_from_directory, current_app, g
+from flask_nav3 import Nav
+from flask_nav3.elements import Navbar, View
+
 from forms.download import DownloadForm
 
 frontend = Blueprint('frontend', __name__)
 
+nav = Nav()
 nav.register_element('frontend_top', Navbar(
     View('yt-dls', '.index'),
     View('downloader', '.downloader'),
     View('updater', '.updater'),
     View('library', '.library')
 )
-                     )
+)
 
 
 @frontend.route('/', methods=['GET'])
@@ -26,13 +30,52 @@ def index():
 @frontend.route('/downloader', methods=['GET', 'POST'])
 def downloader():
     form = DownloadForm()
-    if form.validate_on_submit():
-        # put here the interaction with youtube-dl
-        # or forward to site that shows details of yt link
-        url = form.url.data
-        return f"Hello There {url}"
 
-    return render_template('downloader.html', form=form)
+    url = str(form.url.data)
+
+    # so error message does not get displayed when url is empty
+    # validate_on_submit requires len(str) > 0 in DownloadForm
+    ytLink = True
+    titles = []
+    urls = []
+
+    if form.validate_on_submit():
+        ytLink = True if 'youtube.com' in url else False
+        if ytLink:
+            query = ydl.YoutubeDL({'quiet': True}).extract_info(url=url, download=False)
+
+            # if downloading playlist
+            try:
+                for video in query['entries']:
+                    ydl.YoutubeDL({'quiet': True}).extract_info('https://www.youtube.com/watch?v=' + video['id'], download=False)
+                    titles.append(video['title'])
+                    urls.append('https://www.youtube.com/watch?v=' + video['id'])
+                return render_template('downloader.html', form=form, ytLink=ytLink, titles=titles, urls=urls,
+                                       amount=len(titles))
+            except:
+                pass
+
+            # if downloading channel
+            try:
+                for tab in query['entries']:
+                    for video in tab['entries']:
+                        titles.append(video['title'])
+                        urls.append('https://www.youtube.com/watch?v=' + video['id'])
+                return render_template('downloader.html', form=form, ytLink=ytLink, titles=titles, urls=urls,
+                                       amount=len(titles))
+            except:
+                pass
+
+            # if downloading video
+            try:
+                titles.append(query['title'])
+                urls.append('https://www.youtube.com/watch?v=' + query['id'])
+                return render_template('downloader.html', form=form, ytLink=ytLink, titles=titles, urls=urls,
+                                       amount=len(titles))
+            except:
+                pass
+
+    return render_template('downloader.html', form=form, ytLink=ytLink, titles=titles, urls=urls, amount=len(titles))
 
 
 @frontend.route('/download/<path:file>', methods=['GET'])
@@ -79,3 +122,18 @@ def query_db(query, args=(), one=False):
     res = cur.fetchall()
     cur.close()
     return (res[0] if res else None) if one else res
+
+
+def db_add_collection(info):
+    return
+
+
+def db_add_single(info):
+    return
+
+
+async def download_all(info):
+    return
+
+
+# todo: cache results from extract_info for /download and don't fetch again. update of existing downloads only over /update

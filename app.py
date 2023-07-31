@@ -2,8 +2,7 @@ from flask import Flask, current_app, g
 from flask_bootstrap import Bootstrap
 from flask_wtf.csrf import CSRFProtect
 
-from frontend import frontend, get_db
-from nav import nav
+from frontend import frontend, get_db, nav
 from os import urandom
 
 

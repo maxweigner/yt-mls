@@ -4,3 +4,4 @@ flask_bootstrap
 flask_nav3
 flask_login
 flask_wtf
+yt_dlp
