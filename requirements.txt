@@ -4,3 +4,4 @@ flask_nav3
 flask_wtf
 wtforms
 yt_dlp
+waitress
