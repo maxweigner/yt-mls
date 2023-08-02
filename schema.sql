@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS video (
  */
 CREATE TABLE IF NOT EXISTS playlist (
     folder TEXT PRIMARY KEY,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    url TEXT NOT NULL
 );
 
 /*
@@ -42,9 +43,3 @@ CREATE TABLE IF NOT EXISTS collection (
     video TEXT NOT NULL
 );
 
-/*
-    - user-input url, only playlists get added
- */
-CREATE TABLE IF NOT EXISTS updatelist (
- url TEXT PRIMARY KEY NOT NULL
-);

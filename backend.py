@@ -44,7 +44,7 @@ def process_download(url):
         # this throws KeyError when downloading single file
         for video in query['entries']:
             if check_already_exists(video['id']):
-                add_to_collection_if_not_added(parent, video['id'])
+                add_new_video_to_collection(parent, video['id'])
                 continue
 
             # this throws DownloadError when not downloading playlist
@@ -71,7 +71,7 @@ def process_download(url):
             # for every video in their respective tabs
             for video in tab['entries']:
                 if check_already_exists(video['id']):
-                    add_to_collection_if_not_added(parent, video['id'])
+                    add_new_video_to_collection(parent, video['id'])
                     continue
 
                 # there have been cases of duplicate urls or some with '/watch?v=@channel_name'
@@ -109,6 +109,11 @@ def process_download(url):
     #  downloading large playlists does take quite a while after all
 
     thread_queue.remove(current_thread)
+    return
+
+
+def process_update(url):
+
     return
 
 
@@ -172,8 +177,7 @@ def download_all(parent=None, ext='mp3'):
                 relativePath += str(rowid_new) + '\\'
 
             # set the relative path of playlist in recently added entry
-            query_db_threaded('UPDATE playlist SET folder = :folder WHERE ROWID = :rowid',
-                              {'folder': relativePath, 'rowid': rowid_new})
+            update_playlist_folder_by_rowid(relativePath, rowid_new)
 
             # set path for new downloads
             location = downloads_path() + relativePath
@@ -181,8 +185,7 @@ def download_all(parent=None, ext='mp3'):
         # if that subdirectory does not already exist
         else:
             # set the relative path of playlist in recently added entry
-            query_db_threaded('UPDATE playlist SET folder = :folder WHERE ROWID = :rowid',
-                              {'folder': relativePath, 'rowid': rowid_new})
+            update_playlist_folder_by_rowid(relativePath, rowid_new)
 
             # db_add needs to be passed none so the correct folder can be set in collection
             rowid_new = None

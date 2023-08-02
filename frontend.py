@@ -78,13 +78,13 @@ def download(file_path):
 
 @frontend.route('/update', methods=['GET', 'POST'])
 def updater():
-    downloads = query_db('SELECT name, url FROM updatelist INNER JOIN playlist ON updatelist.ROWID = playlist.ROWID')
+    downloads = query_db('SELECT name, url FROM playlist')
     return render_template('updater.html', downloads=downloads)
 
 
 @frontend.route('/update/<int:url_rowid>')
 def update(url_rowid):
-    url = query_db('SELECT url FROM updatelist WHERE ROWID = :url_rowid',
+    url = query_db('SELECT url FROM playlist WHERE ROWID = :url_rowid',
                    {'url_rowid': url_rowid})[0][0]
 
     # kick off download process

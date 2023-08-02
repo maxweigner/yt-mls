@@ -55,16 +55,28 @@ def db_add(ext, parent_rowid=None, parent=None):
         for i in range(len(titles)):
             query_db_threaded('INSERT INTO video(id, name, ext, path) VALUES (:id, :name, :ext, :path)',
                               {'id': ids[i], 'name': titles[i], 'ext': '.' + ext, 'path': relative_path})
-            query_db_threaded('INSERT INTO collection(playlist, video) VALUES (:folder, :id)',
-                              {'folder': relative_path, 'id': ids[i]})
+
+            add_collection_entry(relative_path, ids[i])
 
     return
 
 
-def add_to_collection_if_not_added(parent, video_id):
+def add_new_video_to_collection(parent, video_id):
     exists = query_db_threaded('SELECT * FROM collection WHERE playlist = :folder AND video = :id',
                                {'folder': parent + '\\', 'id': video_id})
 
     if not len(exists) > 0:
-        query_db_threaded('INSERT INTO collection(playlist, video) VALUES (:folder, :id)',
-                          {'folder': parent + '\\', 'id': video_id})
+        add_collection_entry(parent + '\\', video_id)
+
+    return
+
+
+def add_collection_entry(folder, video_id):
+    query_db_threaded('INSERT INTO collection(playlist, video) VALUES (:folder, :id)',
+                      {'folder': folder, 'id': video_id})
+
+
+def update_playlist_folder_by_rowid(folder, rowid):
+    query_db_threaded('UPDATE playlist SET folder = :folder WHERE ROWID = :rowid',
+                      {'folder': folder, 'rowid': rowid})
+    return
