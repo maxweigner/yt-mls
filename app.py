@@ -2,7 +2,8 @@ from flask import Flask, current_app, g
 from flask_bootstrap import Bootstrap
 from flask_wtf.csrf import CSRFProtect
 
-from frontend import frontend, get_db, nav
+from frontend import frontend, nav
+from backend import get_db
 from os import urandom
 
 
@@ -19,6 +20,7 @@ def create_app():
 
     app.config['BOOTSTRAP_SERVE_LOCAL'] = True
     app.config['SECRET_KEY'] = urandom(32)
+    app.config['BOOTSTRAP_USE_MINIFIED'] = False
     CSRFProtect(app)
 
     app.register_blueprint(frontend)

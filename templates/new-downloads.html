@@ -1,0 +1,31 @@
+{%- extends "base.html" %}
+
+{% block content %}
+    {{ super() }}
+    <div class="container">
+
+        {% if titles %}
+            <div class="container">
+                <table id="videos" class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="text-center">New Title(s)</th>
+                            <th scope="col" class="text-center">URL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in range(amount) %}
+                            <tr>
+                                <td class="text-center">{{ titles[i] }}</td>
+                                <td class="text-center"> <a href="{{ urls[i] }}" target="_blank">Link</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <form target="/start-download"
+                <input type="submit"
+            </div>
+        {% endif %}
+
+    </div>
+{%- endblock %}

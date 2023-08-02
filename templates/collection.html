@@ -1,28 +1,26 @@
 {%- extends "base.html" %}
 
-{% import "bootstrap/utils.html" as utils %}
-
 {% block content %}
-    <div class="container">
-        {%- with messages = get_flashed_messages(with_categories=True)  %}
-            {%- if messages %}
-                <div class="row">
-                    <div class="col-md-12">
-                        {{utils.flashed_messages(messages)}}
-                    </div>
-                </div>
-            {%- endif  %}
-        {%- endwith  %}
-    </div>
-
-    <div class="container">
-        <table id="library" style="width:80%">
-            {% for name in query %}
+    {{ super() }}
+    <div class="container" style="width: 50%">
+        <table id="videos" class="table">
+            <thead>
                 <tr>
-                    <td>{{ name }}</td>
-                    <td>Download</td>
+                    <th scope="col" class="text-center">Song</th>
+                    <th scope="col" class="text-center">Download</th>
                 </tr>
-            {% endfor %}
+            </thead>
+            <tbody>
+                {% for video in videos %}
+                    <tr>
+                        <td class="text-center">{{ video['name'] }}</td>
+                        <td class="text-center"><a href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
+        <form action="/download/{{ videos[0]['path'] }}">
+            <input type="submit" class="btn pull-right" value="Download all"/>
+        </form>
     </div>
 {%- endblock %}
