@@ -42,3 +42,9 @@ CREATE TABLE IF NOT EXISTS collection (
     video TEXT NOT NULL
 );
 
+/*
+    - user-input url, only playlists get added
+ */
+CREATE TABLE IF NOT EXISTS updatelist (
+ url TEXT PRIMARY KEY NOT NULL
+);

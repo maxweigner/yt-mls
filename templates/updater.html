@@ -3,14 +3,33 @@
 {% block content %}
     {{ super() }}
     <div class="container">
-        {%- with messages = get_flashed_messages(with_categories=True)  %}
-            {%- if messages %}
-                <div class="row">
-                    <div class="col-md-12">
-                        {{utils.flashed_messages(messages)}}
+        {% if downloads %}
+        <div class="card" style="width: 100%">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <table id="videos" class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="text-center">Title</th>
+                                        <th scope="col" class="text-center">Download</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for d in downloads %}
+                                        <tr>
+                                            <td class="text-center">{{ d[0] }}</td>
+                                            <td class="text-center"><a href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            {%- endif  %}
-        {%- endwith  %}
+                </li>
+            </ul>
+        </div>
+        {% endif %}
     </div>
 {%- endblock %}

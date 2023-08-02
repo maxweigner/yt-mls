@@ -1,0 +1,70 @@
+from flask import g
+import sqlite3
+from file_cache import ids, titles
+
+
+# fetches db from app context
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect('files.sqlite')
+        db.row_factory = sqlite3.Row
+    return db
+
+
+# used when accessing db from app context; keeps connection alive since it's used more frequently
+def query_db(query, args=(), one=False):
+    db = get_db()
+    cur = db.execute(query, args)
+    res = cur.fetchall()
+    db.commit()
+    cur.close()
+    return (res[0] if res else None) if one else res
+
+
+# used when accessing db from thread, since app context is thread local; does not keep connection alive
+def query_db_threaded(query, args=(), one=False):
+    db = sqlite3.connect('files.sqlite')
+    cur = db.execute(query, args)
+    res = cur.fetchall()
+    db.commit()
+    cur.close()
+    db.close()
+    return (res[0] if res else None) if one else res
+
+
+# add entries do db
+def db_add(ext, parent_rowid=None, parent=None):
+    # if no parent was specified
+    if parent is None:
+        # insert video into db
+        query_db_threaded('INSERT INTO video(id, name, ext, path) VALUES (:id, :name, :ext, :path)',
+                          {'id': ids[0], 'name': titles[0], 'ext': '.' + ext, 'path': '\\'})
+
+    # if a parent was specified
+    else:
+        # set relative path
+        relative_path = parent + '\\'
+
+        # if a rowid was specified
+        if parent_rowid is not None:
+            # adjust the relative path
+            relative_path += str(parent_rowid) + '\\'
+
+        # insert all new files into db
+        for i in range(len(titles)):
+            query_db_threaded('INSERT INTO video(id, name, ext, path) VALUES (:id, :name, :ext, :path)',
+                              {'id': ids[i], 'name': titles[i], 'ext': '.' + ext, 'path': relative_path})
+            query_db_threaded('INSERT INTO collection(playlist, video) VALUES (:folder, :id)',
+                              {'folder': relative_path, 'id': ids[i]})
+
+    return
+
+
+def add_to_collection_if_not_added(parent, video_id):
+    exists = query_db_threaded('SELECT * FROM collection WHERE playlist = :folder AND video = :id',
+                               {'folder': parent + '\\', 'id': video_id})
+
+    if not len(exists) > 0:
+        query_db_threaded('INSERT INTO collection(playlist, video) VALUES (:folder, :id)',
+                          {'folder': parent + '\\', 'id': video_id})

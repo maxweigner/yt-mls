@@ -1,13 +1,12 @@
 from __future__ import unicode_literals
 
-from threading import Thread
-
 from flask import Blueprint, request, render_template, flash, send_from_directory, current_app
 from flask_nav3 import Nav
 from flask_nav3.elements import Navbar, View
 
 from forms.download import DownloadForm
-from backend import query_db, process_download, zip_folder, downloads_path
+from backend import zip_folder, downloads_path, enqueue_download
+from db_tools import query_db
 from file_cache import *
 
 frontend = Blueprint('frontend', __name__)
@@ -50,14 +49,12 @@ def downloader():
         return render_template('downloader.html', form=form, ytLink=valid_link, titles=titles, urls=urls,
                                amount=len(titles))
 
-    # download and processing is happening in background / another thread
-    t = Thread(target=process_download, args=(url,))
-    thread_queue.append(t)
-    t.start()
+    # kick off download process
+    enqueue_download(url)
 
     # show download start confirmation
-    flash('Download started and will continue in background.')
-    return render_template('new-downloads.html', titles=titles, urls=urls, amount=len(titles))
+    flash('Download enqueued and will finish in background.')
+    return render_template('feedback-simple.html', titles=titles, urls=urls, amount=len(titles))
 
 
 # downloads a single file
@@ -81,7 +78,21 @@ def download(file_path):
 
 @frontend.route('/update', methods=['GET', 'POST'])
 def updater():
-    return render_template('updater.html')
+    downloads = query_db('SELECT name, url FROM updatelist INNER JOIN playlist ON updatelist.ROWID = playlist.ROWID')
+    return render_template('updater.html', downloads=downloads)
+
+
+@frontend.route('/update/<int:url_rowid>')
+def update(url_rowid):
+    url = query_db('SELECT url FROM updatelist WHERE ROWID = :url_rowid',
+                   {'url_rowid': url_rowid})[0][0]
+
+    # kick off download process
+    enqueue_download(url)
+
+    # show download start confirmation
+    flash('Update enqueued and will finish in background.')
+    return render_template('feedback-simple.html', titles=titles, urls=urls, amount=len(titles))
 
 
 @frontend.route('/library', methods=['GET'])

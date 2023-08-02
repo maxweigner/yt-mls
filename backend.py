@@ -1,19 +1,27 @@
 import threading
-
-from flask import g
 import yt_dlp as ydl
 from yt_dlp import DownloadError
 import os
 import zipfile
-import sqlite3
-from base64 import b64encode
 
+from base64 import b64encode
+from threading import Thread
+
+from db_tools import *
 from file_cache import *
+
+
+# adds thread to queue and starts it
+def enqueue_download(url):
+    # download and processing is happening in background / another thread
+    t = Thread(target=process_download, args=(url,))
+    thread_queue.append(t)
+    t.start()
 
 
 # this is the 'controller' for the download process
 def process_download(url):
-    # wait for previous thread if not first in list
+    # wait for previous thread to finish if not first / only in list
     current_thread = threading.current_thread()
     if len(thread_queue) > 0 and thread_queue[0] is not current_thread:
         threading.Thread.join(thread_queue[thread_queue.index(current_thread) - 1])
@@ -35,9 +43,8 @@ def process_download(url):
     try:
         # this throws KeyError when downloading single file
         for video in query['entries']:
-            if check_already_exists(video['id']):  # todo: this shit aint tested
-                query_db_threaded('INSERT INTO collection(playlist, video) VALUES (:folder, :id)',
-                                  {'folder': parent + '\\', 'id': video['id']})
+            if check_already_exists(video['id']):
+                add_to_collection_if_not_added(parent, video['id'])
                 continue
 
             # this throws DownloadError when not downloading playlist
@@ -50,6 +57,7 @@ def process_download(url):
 
         # start download
         download_all(parent)
+        thread_queue.remove(current_thread)
         return
 
     # when downloading: channel: DownloadError, single file: KeyError
@@ -63,19 +71,19 @@ def process_download(url):
             # for every video in their respective tabs
             for video in tab['entries']:
                 if check_already_exists(video['id']):
-                    query_db_threaded('INSERT INTO collection(playlist, video) VALUES (:folder, :id)',
-                                      {'folder': parent + '\\', 'id': video['id']})
+                    add_to_collection_if_not_added(parent, video['id'])
                     continue
 
-                # todo: there have been cases of duplicate urls or some with '/watch?v=@channel_name'
-                #  but no consistency has been observed
-                #  still works though so will not be checked for now
+                # there have been cases of duplicate urls or some with '/watch?v=@channel_name'
+                # but no consistency has been observed
+                # still works though so will not be checked for now
                 ids.append(video['id'])
                 titles.append(video['title'])
                 urls.append('https://www.youtube.com/watch?v=' + video['id'])
 
         # start download
         download_all(parent)
+        thread_queue.remove(current_thread)
         return
 
     # when downloading single file: KeyError
@@ -92,7 +100,6 @@ def process_download(url):
 
         # start download
         download_all()
-        return
 
     # this is broad on purpose; there has been no exception thrown here _yet_
     except Exception as e:
@@ -100,7 +107,6 @@ def process_download(url):
 
     # todo: a site with (not) finished downloads (url/datetime) would be nice so you know when it's done
     #  downloading large playlists does take quite a while after all
-    #  adding that entry to the site would be done -here- i guess
 
     thread_queue.remove(current_thread)
     return
@@ -108,68 +114,11 @@ def process_download(url):
 
 # checks whether a video is already in db
 def check_already_exists(video_id) -> bool:
-    res = query_db_threaded('SELECT name FROM video WHERE id = :id', {'id': video_id})
+    res = query_db_threaded('SELECT name FROM video WHERE id = :id',
+                            {'id': video_id})
     if len(res) > 0:
         return True
     return False
-
-
-# fetches db from app context
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect('files.sqlite')
-        db.row_factory = sqlite3.Row
-    return db
-
-
-# used when accessing db from app context; keeps connection alive since it's used more frequently
-def query_db(query, args=(), one=False):
-    db = get_db()
-    cur = db.execute(query, args)
-    res = cur.fetchall()
-    db.commit()
-    cur.close()
-    return (res[0] if res else None) if one else res
-
-
-# used when accessing db from thread, since app context is thread local; does not keep connection alive
-def query_db_threaded(query, args=(), one=False):
-    db = sqlite3.connect('files.sqlite')
-    cur = db.execute(query, args)
-    res = cur.fetchall()
-    db.commit()
-    cur.close()
-    db.close()
-    return (res[0] if res else None) if one else res
-
-
-# add entries do db
-def db_add(ext, parent_rowid=None, parent=None):
-    # if no parent was specified
-    if parent is None:
-        # insert video into db
-        query_db_threaded('INSERT INTO video(id, name, ext, path) VALUES (:id, :name, :ext, :path)',
-                          {'id': ids[0], 'name': titles[0], 'ext': '.' + ext, 'path': '\\'})
-
-    # if a parent was specified
-    else:
-        # set relative path
-        relative_path = parent + '\\'
-
-        # if a rowid was specified
-        if parent_rowid is not None:
-            # adjust the relative path
-            relative_path += str(parent_rowid) + '\\'
-
-        # insert all new files into db
-        for i in range(len(titles)):
-            query_db_threaded('INSERT INTO video(id, name, ext, path) VALUES (:id, :name, :ext, :path)',
-                              {'id': ids[i], 'name': titles[i], 'ext': '.' + ext, 'path': relative_path})
-            query_db_threaded('INSERT INTO collection(playlist, video) VALUES (:folder, :id)',
-                              {'folder': relative_path, 'id': ids[i]})
-
-    return
 
 
 def download_all(parent=None, ext='mp3'):
@@ -245,9 +194,20 @@ def download_all(parent=None, ext='mp3'):
     else:
         location = downloads_path()
 
+    # start actual file download
+    yt_download(location, ext)
+
+    # add downloaded files to db
+    db_add(ext, rowid_new, parent)
+
+    return
+
+
+# actually downloads files
+def yt_download(location, ext='mp3'):
     # base download options for audio
     opts = {
-        'quiet': False,
+        'quiet': True,
         'windowsfilenames': True,
         'outtmpl': location + '%(title)s.%(ext)s',
         'format': 'bestaudio/best',
@@ -268,9 +228,6 @@ def download_all(parent=None, ext='mp3'):
         ydl.YoutubeDL(opts).download(urls)
     except DownloadError:
         pass
-
-    # add downloaded files to db
-    db_add(ext, rowid_new, parent)
 
     return
 
