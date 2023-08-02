@@ -2,57 +2,56 @@
 
 {% block content %}
     {{ super() }}
-    <div class="container">
-
-        <div class="card" style="width: 100%">
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item">
-                    <div class="row">
-                        <div class="col-md-5">
-                            <table id="videos" class="table">
+    <div class="container" style="width: fit-content(105%)">
+        {% if playlists %}
+            <div class="card">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <div class="row">
+                            <table id="playlists" class="table">
                                 <thead>
                                     <tr>
-                                        <th scope="col" class="text-center">Title</th>
-                                        <th scope="col" class="text-center">Download</th>
+                                        <th scope="col" class="text-center">Playlists</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for video in videos %}
+                                    {% for playlist in playlists %}
                                         <tr>
-                                            <td class="text-center">{{ video['name'] }}</td>
-                                            <td class="text-center"><a href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
+                                            <td class="text-center"> <a href="/library-playlist?playlist={{ playlist['ROWID'] }}">{{ playlist['name'] }}</a></td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+
+        <br><br>
+        <div class="card">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <div class="row">
+                        <table id="videos" class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="text-center">Title</th>
+                                    <th scope="col" class="text-center">Download</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for video in videos %}
+                                    <tr>
+                                        <td class="text-center">{{ video['name'] }}</td>
+                                        <td class="text-center"><a href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </li>
             </ul>
         </div>
-
-        <br><br>
-
-
-        <div class="col-md-1"></div>
-
-        {% if playlists %}
-            <div class="col-md-2">
-                <table id="playlists" class="table">
-                    <thead>
-                        <tr>
-                            <th scope="col" class="text-center">Playlists</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for playlist in playlists %}
-                            <tr>
-                                <td class="text-center"> <a href="/library-playlist?playlist={{ playlist['ROWID'] }}">{{ playlist['name'] }}</a></td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% endif %}
     </div>
 {%- endblock %}

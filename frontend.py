@@ -13,7 +13,7 @@ frontend = Blueprint('frontend', __name__)
 
 nav = Nav()
 nav.register_element('frontend_top', Navbar(
-    View('yt-dls', '.index'),
+    View('ytm-ls', '.index'),
     View('downloader', '.downloader'),
     View('updater', '.updater'),
     View('library', '.library')
