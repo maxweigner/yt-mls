@@ -78,7 +78,7 @@ def download(file_path):
 
 @frontend.route('/update', methods=['GET', 'POST'])
 def updater():
-    downloads = query_db('SELECT name, url FROM playlist')
+    downloads = query_db('SELECT name, ROWID FROM playlist')
     return render_template('updater.html', downloads=downloads)
 
 
@@ -88,7 +88,7 @@ def update(url_rowid):
                    {'url_rowid': url_rowid})[0][0]
 
     # kick off download process
-    enqueue_download(url)
+    enqueue_download(url, True)
 
     # show download start confirmation
     flash('Update enqueued and will finish in background.')

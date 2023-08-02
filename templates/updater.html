@@ -13,14 +13,14 @@
                                 <thead>
                                     <tr>
                                         <th scope="col" class="text-center">Title</th>
-                                        <th scope="col" class="text-center">Download</th>
+                                        <th scope="col" class="text-center">Update</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for d in downloads %}
                                         <tr>
                                             <td class="text-center">{{ d[0] }}</td>
-                                            <td class="text-center"><a href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
+                                            <td class="text-center"><a href="/update/{{ d[1] }}">Start</a></td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>

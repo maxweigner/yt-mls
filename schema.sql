@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS video (
 CREATE TABLE IF NOT EXISTS playlist (
     folder TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    url TEXT NOT NULL
+    url TEXT UNIQUE NOT NULL
 );
 
 /*

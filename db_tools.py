@@ -34,12 +34,11 @@ def query_db_threaded(query, args=(), one=False):
 
 
 # add entries do db
-def db_add(ext, parent_rowid=None, parent=None):
+def db_add_via_download(ext, parent_rowid=None, parent=None):
     # if no parent was specified
     if parent is None:
         # insert video into db
-        query_db_threaded('INSERT INTO video(id, name, ext, path) VALUES (:id, :name, :ext, :path)',
-                          {'id': ids[0], 'name': titles[0], 'ext': '.' + ext, 'path': '\\'})
+        add_new_video(ids[0], titles[0], ext, '')
 
     # if a parent was specified
     else:
@@ -53,11 +52,24 @@ def db_add(ext, parent_rowid=None, parent=None):
 
         # insert all new files into db
         for i in range(len(titles)):
-            query_db_threaded('INSERT INTO video(id, name, ext, path) VALUES (:id, :name, :ext, :path)',
-                              {'id': ids[i], 'name': titles[i], 'ext': '.' + ext, 'path': relative_path})
-
+            add_new_video(ids[i], titles[i], ext, relative_path)
             add_collection_entry(relative_path, ids[i])
 
+    return
+
+
+def db_add_via_update(folder, ext):
+    # insert all new files into db
+    for i in range(len(titles)):
+        add_new_video(ids[i], titles[i], ext, folder)
+        add_collection_entry(folder, ids[i])
+
+    return
+
+
+def add_new_video(video_id, name, ext, path):
+    query_db_threaded('INSERT INTO video(id, name, ext, path) VALUES (:id, :name, :ext, :path)',
+                      {'id': video_id, 'name': name, 'ext': '.' + ext, 'path': path})
     return
 
 

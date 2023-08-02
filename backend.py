@@ -12,15 +12,14 @@ from file_cache import *
 
 
 # adds thread to queue and starts it
-def enqueue_download(url):
+def enqueue_download(url, update=False):
     # download and processing is happening in background / another thread
-    t = Thread(target=process_download, args=(url,))
+    t = Thread(target=process_general, args=(url,update))
     thread_queue.append(t)
     t.start()
 
 
-# this is the 'controller' for the download process
-def process_download(url):
+def process_general(url, update=False):
     # wait for previous thread to finish if not first / only in list
     current_thread = threading.current_thread()
     if len(thread_queue) > 0 and thread_queue[0] is not current_thread:
@@ -35,6 +34,16 @@ def process_download(url):
     query = ydl.YoutubeDL({'quiet': True}).extract_info(url=url, download=False)
     parent = query['title']
 
+    if update:
+        process_update(parent, query, current_thread)
+    else:
+        process_download(url, parent, query, current_thread)
+
+    return
+
+
+# this is the 'controller' for the download process
+def process_download(url, parent, query, current_thread):
     # one of the three cases does not throw an exception
     # and therefore gets to download and return
     # kinda hacky but whatever
@@ -56,7 +65,7 @@ def process_download(url):
             urls.append('https://www.youtube.com/watch?v=' + video['id'])
 
         # start download
-        download_all(parent)
+        download_all(url, parent)
         thread_queue.remove(current_thread)
         return
 
@@ -82,7 +91,7 @@ def process_download(url):
                 urls.append('https://www.youtube.com/watch?v=' + video['id'])
 
         # start download
-        download_all(parent)
+        download_all(url, parent)
         thread_queue.remove(current_thread)
         return
 
@@ -99,7 +108,7 @@ def process_download(url):
             urls.append('https://www.youtube.com/watch?v=' + query['id'])
 
         # start download
-        download_all()
+        download_all(url)
 
     # this is broad on purpose; there has been no exception thrown here _yet_
     except Exception as e:
@@ -112,8 +121,58 @@ def process_download(url):
     return
 
 
-def process_update(url):
+# this is the 'controller' for the update process
+def process_update(parent, query, current_thread):
+    # if updating playlist
+    try:
+        # this throws KeyError when downloading single file
+        for video in query['entries']:
+            if check_already_exists(video['id']):
+                add_new_video_to_collection(parent, video['id'])
+                continue
 
+            # this throws DownloadError when not downloading playlist
+            ydl.YoutubeDL({'quiet': True}).extract_info('https://www.youtube.com/watch?v=' + video['id'],
+                                                        download=False)
+            # add new entry to file_cache
+            ids.append(video['id'])
+            titles.append(video['title'])
+            urls.append('https://www.youtube.com/watch?v=' + video['id'])
+
+        # start update
+        update_all()
+        thread_queue.remove(current_thread)
+        return
+
+    # when downloading: channel: DownloadError, single file: KeyError
+    except (DownloadError, KeyError):
+        pass
+
+    # if downloading channel
+    try:
+        # for every tab (videos/shorts)
+        for tab in query['entries']:
+            # for every video in their respective tabs
+            for video in tab['entries']:
+                if check_already_exists(video['id']):
+                    add_new_video_to_collection(parent, video['id'])
+                    continue
+
+                # there have been cases of duplicate urls or some with '/watch?v=@channel_name'
+                # but no consistency has been observed
+                # still works though so will not be checked for now
+                ids.append(video['id'])
+                titles.append(video['title'])
+                urls.append('https://www.youtube.com/watch?v=' + video['id'])
+
+        # start download
+        update_all()
+        thread_queue.remove(current_thread)
+        return
+    except KeyError:
+        pass
+
+    thread_queue.remove(current_thread)
     return
 
 
@@ -126,7 +185,7 @@ def check_already_exists(video_id) -> bool:
     return False
 
 
-def download_all(parent=None, ext='mp3'):
+def download_all(url, parent=None, ext='mp3'):
     # if no new files to download, there's nothing to do here
     if not len(urls) > 0: return
 
@@ -136,8 +195,8 @@ def download_all(parent=None, ext='mp3'):
     # if a parent was specified
     if parent is not None:
         # insert new playlist into db and get the rowid of the new entry
-        rowid_new = query_db_threaded('INSERT INTO playlist(name) VALUES (:name) RETURNING ROWID',
-                                      {'name': parent})[0][0]
+        rowid_new = query_db_threaded('INSERT INTO playlist(name, url) VALUES (:name, :url) RETURNING ROWID',
+                                      {'name': parent, 'url': url})[0][0]
 
         # set the base relative path for playlists
         relativePath = parent + '\\'
@@ -201,8 +260,20 @@ def download_all(parent=None, ext='mp3'):
     yt_download(location, ext)
 
     # add downloaded files to db
-    db_add(ext, rowid_new, parent)
+    db_add_via_download(ext, rowid_new, parent)
 
+    return
+
+
+def update_all():
+    ext, folder = query_db_threaded('SELECT video.ext, playlist.folder FROM video '
+                                    'INNER JOIN collection ON video.id=collection.video '
+                                    'INNER JOIN playlist ON collection.playlist=playlist.folder',
+                                    {},
+                                    True)
+
+    yt_download(downloads_path() + folder, ext[1:])
+    db_add_via_update(folder, ext)
     return
 
 
