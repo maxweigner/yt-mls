@@ -2,7 +2,7 @@
 
 {% block content %}
     {{ super() }}
-    <div class="container" style="width: fit-content(105%)">
+    <div class="container-fluid" style="width: fit-content(105%)">
         {% if playlists %}
             <div class="card">
                 <ul class="list-group list-group-flush">
@@ -12,12 +12,14 @@
                                 <thead>
                                     <tr>
                                         <th scope="col" class="text-center">Playlists</th>
+                                        <th scope="col" class="text-center">Update</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for playlist in playlists %}
                                         <tr>
-                                            <td class="text-center"> <a href="/library-playlist?playlist={{ playlist['ROWID'] }}">{{ playlist['name'] }}</a></td>
+                                            <td class="text-center"><a class="btn" href="/library-playlist?playlist={{ playlist['ROWID'] }}">{{ playlist['name'] }}</a></td>
+                                            <td class="text-center"><a class="btn" href="/update/{{ playlist[1] }}">Start</a></td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -46,7 +48,7 @@
                                     {% for video in videos %}
                                         <tr>
                                             <td class="text-center">{{ video['name'] }}</td>
-                                            <td class="text-center"><a href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
+                                            <td class="text-center"><a class="btn" href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>

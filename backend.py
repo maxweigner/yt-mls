@@ -1,6 +1,5 @@
 import threading
 import yt_dlp as ydl
-from yt_dlp import DownloadError
 import os
 import zipfile
 from datetime import datetime
@@ -13,15 +12,15 @@ from file_cache import *
 
 
 # adds thread to queue and starts it
-def enqueue_download(url, update=False):
+def enqueue_download(url, update=False, ext='mp3'):
     # download and processing is happening in background / another thread
-    t = Thread(target=process_general, args=(url,update))
+    t = Thread(target=process_general, args=(url, ext, update))
     thread_queue.append(t)
     t.start()
     return
 
 
-def process_general(url, update=False):
+def process_general(url, ext, update=False):
     # get current time and put in list to be displayed on /index
     current_time = datetime.now().time()
     running_downloads.append([url, str(current_time.hour) + ':' + str(current_time.minute)])
@@ -43,7 +42,7 @@ def process_general(url, update=False):
     if update:
         process_update(parent, query, current_thread)
     else:
-        process_download(url, parent, query, current_thread)
+        process_download(url, ext, parent, query, current_thread)
 
     try:
         running_downloads.pop(0)
@@ -54,7 +53,7 @@ def process_general(url, update=False):
 
 
 # this is the 'controller' for the download process
-def process_download(url, parent, query, current_thread):
+def process_download(url, ext, parent, query, current_thread):
     # one of the three cases does not throw an exception
     # and therefore gets to download and return
     # kinda hacky but whatever
@@ -76,12 +75,12 @@ def process_download(url, parent, query, current_thread):
             urls.append('https://www.youtube.com/watch?v=' + video['id'])
 
         # start download
-        download_all(url, parent)
+        download_all(url, ext, parent)
         thread_queue.remove(current_thread)
         return
 
     # when downloading: channel: DownloadError, single file: KeyError
-    except (DownloadError, KeyError):
+    except (ydl.DownloadError, KeyError):
         pass
 
     # if downloading channel
@@ -102,7 +101,7 @@ def process_download(url, parent, query, current_thread):
                 urls.append('https://www.youtube.com/watch?v=' + video['id'])
 
         # start download
-        download_all(url, parent)
+        download_all(url, ext, parent)
         thread_queue.remove(current_thread)
         return
 
@@ -119,7 +118,7 @@ def process_download(url, parent, query, current_thread):
             urls.append('https://www.youtube.com/watch?v=' + query['id'])
 
         # start download
-        download_all(url)
+        download_all(url, ext=ext)
 
     # this is broad on purpose; there has been no exception thrown here _yet_
     except Exception as e:
@@ -156,7 +155,7 @@ def process_update(parent, query, current_thread):
         return
 
     # when downloading: channel: DownloadError, single file: KeyError
-    except (DownloadError, KeyError):
+    except (ydl.DownloadError, KeyError):
         pass
 
     # if downloading channel
@@ -196,7 +195,7 @@ def check_already_exists(video_id) -> bool:
     return False
 
 
-def download_all(url, parent=None, ext='mp3'):
+def download_all(url, ext, parent=None):
     # if no new files to download, there's nothing to do here
     if not len(urls) > 0: return
 
@@ -311,7 +310,7 @@ def yt_download(location, ext='mp3'):
     # try to download all new files
     try:
         ydl.YoutubeDL(opts).download(urls)
-    except DownloadError:
+    except ydl.DownloadError:
         pass
 
     return

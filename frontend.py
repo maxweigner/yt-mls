@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from flask import Blueprint, request, render_template, flash, send_from_directory, current_app
+from flask import Blueprint, request, render_template, flash, send_from_directory
 from flask_nav3 import Nav
 from flask_nav3.elements import Navbar, View
 
@@ -14,10 +14,9 @@ frontend = Blueprint('frontend', __name__)
 nav = Nav()
 nav.register_element('frontend_top', Navbar(
     View('ytm-ls', '.index'),
-    View('downloader', '.downloader'),
-    View('updater', '.updater'),
-    View('library', '.library')
-)
+    View('Downloader', '.downloader'),
+    View('Library', '.library')
+    )
 )
 
 
@@ -36,11 +35,12 @@ def downloader():
 
     # get url out of form
     url = str(form.url.data)
+    ext = str(form.ext.data)
 
     # check if valid link
     # this tool should technically work with other platforms but that is not tested
     # since KeyErrors are to be expected in backend.process_download(url), it's blocked here
-    # you are invited to test and adjust the code for other platforms and open a merge request
+    # you are invited to test and adjust the code for other platforms
     valid_link = True if 'youtube.com' in url or 'youtu.be' in url else False
 
     # if there has been a problem with the form (empty or error) or the link is not valid
@@ -49,7 +49,7 @@ def downloader():
         return render_template('downloader.html', form=form, ytLink=valid_link, amount=len(urls))
 
     # kick off download process
-    enqueue_download(url)
+    enqueue_download(url, ext=ext)
 
     # show download start confirmation
     flash('Download enqueued and will finish in background.')
@@ -75,21 +75,13 @@ def download(file_path):
         )
 
 
-@frontend.route('/update', methods=['GET', 'POST'])
-def updater():
-    downloads = query_db('SELECT name, ROWID FROM playlist')
-    if not downloads:
-        flash('Library has no playlists yet. Try downloading some!')
-    return render_template('updater.html', downloads=downloads)
-
-
-@frontend.route('/update/<int:url_rowid>')
+@frontend.route('/update/<int:url_rowid>', methods=['GET'])
 def update(url_rowid):
     url = query_db('SELECT url FROM playlist WHERE ROWID = :url_rowid',
                    {'url_rowid': url_rowid})[0][0]
 
     # kick off download process
-    enqueue_download(url, True)
+    enqueue_download(url, update=True)
 
     # show download start confirmation
     flash('Update enqueued and will finish in background.')

@@ -2,18 +2,15 @@
 
 {% block content %}
     {{ super() }}
-    <div class="container">
-        <div class="card" style="width: fit-content">
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item">
-                    <form method="POST">
-                    {{ form.csrf_token }}
-                    {{ form.url.label }} <br>
-                    {{ form.url }}
-                    {{ form.submit }}
-                    </form>
-                </li>
-            </ul>
+    <div class="container-fluid" style="width: fit-content; align-self: flex-start">
+        <div class="table-bordered" style="padding: .5cm">
+            <form method="POST" class="form-group">
+                {{ form.csrf_token }}
+                {{ form.url.label(class_="form-text") }} <br>
+                {{ form.url(class_="form-control") }} <br>
+                {{ form.ext(class_="form-control") }} <br>
+                {{ form.submit(class_="btn primary") }}
+            </form>
         </div>
 
         {% if form.errors %}

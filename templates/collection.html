@@ -2,7 +2,7 @@
 
 {% block content %}
     {{ super() }}
-    <div class="container" style="width: 50%">
+    <div class="container-fluid" style="width: fit-content(105%)">
         <table id="videos" class="table">
             <thead>
                 <tr>
@@ -14,7 +14,7 @@
                 {% for video in videos %}
                     <tr>
                         <td class="text-center">{{ video['name'] }}</td>
-                        <td class="text-center"><a href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
+                        <td class="text-center"><a class="btn" href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
                     </tr>
                 {% endfor %}
             </tbody>
