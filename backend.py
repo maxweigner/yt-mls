@@ -304,6 +304,7 @@ def yt_download(location, ext='mp3'):
 
     # if videos are wanted, adjust the options
     if ext == 'mp4':
+        opts['format'] = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]'
         opts.pop('format')
         opts.pop('postprocessors')
 

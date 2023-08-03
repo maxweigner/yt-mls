@@ -2,61 +2,61 @@
 
 {% block content %}
     {{ super() }}
-    <div class="container-fluid" style="width: fit-content(105%)">
+    <div class="container" style="width: fit-content(100%); padding: 1.5%">
         {% if playlists %}
             <div class="card">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">
-                        <div class="row">
-                            <table id="playlists" class="table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="text-center">Playlists</th>
-                                        <th scope="col" class="text-center">Update</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for playlist in playlists %}
-                                        <tr>
-                                            <td class="text-center"><a class="btn" href="/library-playlist?playlist={{ playlist['ROWID'] }}">{{ playlist['name'] }}</a></td>
-                                            <td class="text-center"><a class="btn" href="/update/{{ playlist[1] }}">Start</a></td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </li>
-                </ul>
+                <div class="card-body">
+                    <table id="playlists" class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center align-middle">Playlists</th>
+                                <th scope="col" class="text-center align-middle">Update</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for playlist in playlists %}
+                                <tr>
+                                    <td class="text-center align-middle"><a class="btn btn-link" href="/library-playlist?playlist={{ playlist['ROWID'] }}">{{ playlist['name'] }}</a></td>
+                                    <td class="text-center align-middle"><a class="btn btn-link" href="/update/{{ playlist[1] }}">Start</a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         {% endif %}
 
-        <br><br>
+        <br>
 
         {% if videos %}
             <div class="card">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">
-                        <div class="row">
-                            <table id="videos" class="table">
-                                <thead>
+                <div class="card-body">
+                    <table id="videos" class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center align-middle">Titles not in any playlist</th>
+                                <th scope="col" class="text-center align-middle">Download</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for video in videos %}
+                                {% if 'mp3' in video['ext'] %}
+                                <tr>
+                                    <td class="text-center align-middle">{{ video['name'] }}</td>
+                                    <td class="text-center align-middle"><a class="btn btn-link" href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Download</a></td>
+                                </tr>
+                                {% endif %}
+
+                                {% if 'mp4' in video['ext'] %}
                                     <tr>
-                                        <th scope="col" class="text-center">Title</th>
-                                        <th scope="col" class="text-center">Download</th>
+                                        <td class="text-center align-middle">{{ video['name'] }}</td>
+                                        <td class="text-center align-middle"><a class="btn btn-link" href="/player?file={{ video['path'] + video['name'] + video['ext'] }}">Watch</a></td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {% for video in videos %}
-                                        <tr>
-                                            <td class="text-center">{{ video['name'] }}</td>
-                                            <td class="text-center"><a class="btn" href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </li>
-                </ul>
-            </div>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
         {% endif %}
     </div>
 {%- endblock %}

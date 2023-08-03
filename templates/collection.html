@@ -2,25 +2,32 @@
 
 {% block content %}
     {{ super() }}
-    <div class="container-fluid" style="width: fit-content(105%)">
-        <table id="videos" class="table">
-            <thead>
-                <tr>
-                    <th scope="col" class="text-center">Song</th>
-                    <th scope="col" class="text-center">Download</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for video in videos %}
-                    <tr>
-                        <td class="text-center">{{ video['name'] }}</td>
-                        <td class="text-center"><a class="btn" href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <form action="/download/{{ videos[0]['path'] }}">
-            <input type="submit" class="btn pull-right" value="Download all"/>
-        </form>
+    <div class="container" style="width: fit-content(100%); padding: 1.5%">
+        <div class="card">
+            <div class="card-body">
+                <table id="videos" class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="text-center">Song</th>
+                            <th scope="col" class="text-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for video in videos %}
+                            <tr>
+                                <td class="text-center">{{ video['name'] }}</td>
+                                <td class="text-center"><a class="btn btn-link" href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Download</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+        <div class="container" style="padding: 1.5%">
+            <form action="/download/{{ videos[0]['path'] }}">
+                <input type="submit" class="btn btn-primary float-end" value="Download all"/>
+            </form>
+        </div>
     </div>
 {%- endblock %}

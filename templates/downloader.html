@@ -2,15 +2,29 @@
 
 {% block content %}
     {{ super() }}
-    <div class="container-fluid" style="width: fit-content; align-self: flex-start">
-        <div class="table-bordered" style="padding: .5cm">
-            <form method="POST" class="form-group">
-                {{ form.csrf_token }}
-                {{ form.url.label(class_="form-text") }} <br>
-                {{ form.url(class_="form-control") }} <br>
-                {{ form.ext(class_="form-control") }} <br>
-                {{ form.submit(class_="btn primary") }}
-            </form>
+    <div class="container-fluid d-flex justify-content-center" style="width: fit-content(100%); padding: 1.5%">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" class="form-group">
+                    {{ form.csrf_token }}
+                    <div class="container-fluid" style="width: fit-content">
+                        <div class="row" style="width: fit-content">
+                            {{ form.url.label(class_="form-label") }}
+                        </div>
+                        <div class="row" style="width: fit-content">
+                            <div class="col">
+                                {{ form.url(class_="form-control") }}
+                            </div>
+                            <div class="col">
+                                {{ form.ext(class_="form-select") }}
+                            </div>
+                            <div class="col" style="width: fit-content">
+                                {{ form.submit(class_="btn btn-primary") }}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
 
         {% if form.errors %}

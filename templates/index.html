@@ -1,34 +1,34 @@
 {%- extends "base.html" %}
 
-{% import "bootstrap/utils.html" as utils %}
-
 {% block content %}
     {{ super() }}
-    <div class="container" style="width: fit-content(105%)">
+    <div class="container" style="width: fit-content(100%); padding: 1.5%">
         {% if running_downloads %}
             <div class="card">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">
-                        <div class="row">
-                            <table id="videos" class="table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="text-center">Queue</th>
-                                        <th scope="col" class="text-center">Started at</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for entry in running_downloads %}
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <div class="row">
+                                <table id="videos" class="table">
+                                    <thead>
                                         <tr>
-                                            <td class="text-center"><a href="{{ entry[0] }}" target="_blank">{{ entry[0] }}</a></td>
-                                            <td class="text-center">{{ entry[1] }}</td>
+                                            <th scope="col" class="text-center">Queue</th>
+                                            <th scope="col" class="text-center">Started at</th>
                                         </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </li>
-                </ul>
+                                    </thead>
+                                    <tbody>
+                                        {% for entry in running_downloads %}
+                                            <tr>
+                                                <td class="text-center"><a href="{{ entry[0] }}" target="_blank">{{ entry[0] }}</a></td>
+                                                <td class="text-center">{{ entry[1] }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
             </div>
 
                 <br><br>

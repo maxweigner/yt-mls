@@ -1,6 +1,4 @@
 flask
-flask_bootstrap
-flask_nav3
 flask_wtf
 wtforms
 yt_dlp

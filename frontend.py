@@ -1,8 +1,7 @@
 from __future__ import unicode_literals
 
-from flask import Blueprint, request, render_template, flash, send_from_directory
-from flask_nav3 import Nav
-from flask_nav3.elements import Navbar, View
+
+from flask import Blueprint, request, render_template, flash, send_from_directory, send_file
 
 from forms.download import DownloadForm
 from backend import zip_folder, downloads_path, enqueue_download
@@ -11,20 +10,12 @@ from file_cache import *
 
 frontend = Blueprint('frontend', __name__)
 
-nav = Nav()
-nav.register_element('frontend_top', Navbar(
-    View('ytm-ls', '.index'),
-    View('Downloader', '.downloader'),
-    View('Library', '.library')
-    )
-)
-
 
 # index has a list of running downloads
 @frontend.route('/', methods=['GET'])
 def index():
     if not running_downloads:
-        flash('Currently, no downloads are running.')
+        flash('Currently, no downloads are running.', 'primary')
     return render_template('index.html', running_downloads=running_downloads, titles=titles, urls=urls, amount=len(urls))
 
 
@@ -52,7 +43,7 @@ def downloader():
     enqueue_download(url, ext=ext)
 
     # show download start confirmation
-    flash('Download enqueued and will finish in background.')
+    flash('Download enqueued and will finish in background.', 'primary')
     return render_template('feedback-simple.html', amount=len(urls))
 
 
@@ -84,16 +75,17 @@ def update(url_rowid):
     enqueue_download(url, update=True)
 
     # show download start confirmation
-    flash('Update enqueued and will finish in background.')
+    flash('Update enqueued and will finish in background.', 'primary')
     return render_template('feedback-simple.html', titles=titles, urls=urls, amount=len(urls))
 
 
 @frontend.route('/library', methods=['GET'])
 def library():
-    videos = query_db("SELECT name, ext, path FROM video")
+    videos = query_db("SELECT name, ext, path FROM video "
+                      "LEFT JOIN collection ON video.id = collection.video WHERE collection.video IS NULL ")
     playlists = query_db("SELECT name, ROWID FROM playlist")
     if not playlists and not videos:
-        flash('Library ist currently empty. Try downloading something!')
+        flash('Library ist currently empty. Try downloading something!', 'primary')
 
     return render_template('library.html', videos=videos, playlists=playlists, amount=len(playlists))
 
@@ -106,3 +98,27 @@ def library_playlist():
                       'playlist.ROWID = :playlist',
                       {'playlist': playlist})
     return render_template('collection.html', videos=videos)
+
+
+@frontend.route('/player', methods=['GET'])
+def player():
+    return render_template('video-player.html')
+
+
+@frontend.route('/serve', methods=['GET'])
+def serve():
+    file = request.args.get('file', None)
+    if 'audio' in file:
+        file = r'downloads\\CptCatman\\my vital organs all lift together.mp3'
+        return send_file(
+            file,
+            'audio/mpeg',
+            True
+        )
+    else:
+        file = r'downloads\\Rick Astley - Never Gonna Give You Up (Official Music Video).webm'
+        return send_file(
+            file,
+            'video/webm',
+            True
+        )
