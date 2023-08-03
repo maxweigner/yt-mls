@@ -332,11 +332,11 @@ def zip_folder(full_rel_path):
             break
 
     # get filename of existing zip else empty string
-    existing_zip = directory_contains_zip(full_rel_path)
+    existing_zip_name = directory_contains_zip(full_rel_path)
 
     # get or generate filename
-    if existing_zip:
-        filename = existing_zip
+    if existing_zip_name:
+        filename = existing_zip_name
     else:
         # generate filename without slashes as that might be a problem but that was not tested
         filename = (b64encode(os.urandom(4)).decode('utf-8')
@@ -352,7 +352,7 @@ def zip_folder(full_rel_path):
     # Open the existing zip file in append mode
     with zipfile.ZipFile(downloads_path() + full_rel_path + filename, 'a') as existing_zip:
         file_list = existing_zip.namelist()
-        file_list = [e[len(parent)+len(downloads_path())+1:] for e in file_list]
+        file_list = [e[len(parent)+1:] for e in file_list]
 
         for entry in os.scandir(downloads_path() + full_rel_path):
             if entry.is_file() and not entry.name.endswith('.zip') and entry.name not in file_list:
