@@ -21,12 +21,12 @@ nav.register_element('frontend_top', Navbar(
 )
 
 
-# there's basically nothing on index
-# todo: a nice homepage or even a login could be nice
-#  those that have a need for it and are able to make it secure, are invited to open a merge request
+# index has a list of running downloads
 @frontend.route('/', methods=['GET'])
 def index():
-    return render_template('index.html')
+    if not running_downloads:
+        flash('Currently, no downloads are running.')
+    return render_template('index.html', running_downloads=running_downloads, titles=titles, urls=urls, amount=len(urls))
 
 
 @frontend.route('/downloader', methods=['GET', 'POST'])
@@ -46,15 +46,14 @@ def downloader():
     # if there has been a problem with the form (empty or error) or the link is not valid
     if not form.validate_on_submit() or not valid_link:
         valid_link = True if url == 'None' else False  # if url is empty, don't show error
-        return render_template('downloader.html', form=form, ytLink=valid_link, titles=titles, urls=urls,
-                               amount=len(titles))
+        return render_template('downloader.html', form=form, ytLink=valid_link, amount=len(urls))
 
     # kick off download process
     enqueue_download(url)
 
     # show download start confirmation
     flash('Download enqueued and will finish in background.')
-    return render_template('feedback-simple.html', titles=titles, urls=urls, amount=len(titles))
+    return render_template('feedback-simple.html', amount=len(urls))
 
 
 # downloads a single file
@@ -79,6 +78,8 @@ def download(file_path):
 @frontend.route('/update', methods=['GET', 'POST'])
 def updater():
     downloads = query_db('SELECT name, ROWID FROM playlist')
+    if not downloads:
+        flash('Library has no playlists yet. Try downloading some!')
     return render_template('updater.html', downloads=downloads)
 
 
@@ -92,13 +93,16 @@ def update(url_rowid):
 
     # show download start confirmation
     flash('Update enqueued and will finish in background.')
-    return render_template('feedback-simple.html', titles=titles, urls=urls, amount=len(titles))
+    return render_template('feedback-simple.html', titles=titles, urls=urls, amount=len(urls))
 
 
 @frontend.route('/library', methods=['GET'])
 def library():
     videos = query_db("SELECT name, ext, path FROM video")
     playlists = query_db("SELECT name, ROWID FROM playlist")
+    if not playlists and not videos:
+        flash('Library ist currently empty. Try downloading something!')
+
     return render_template('library.html', videos=videos, playlists=playlists, amount=len(playlists))
 
 

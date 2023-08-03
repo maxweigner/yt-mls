@@ -29,29 +29,32 @@
         {% endif %}
 
         <br><br>
-        <div class="card">
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item">
-                    <div class="row">
-                        <table id="videos" class="table">
-                            <thead>
-                                <tr>
-                                    <th scope="col" class="text-center">Title</th>
-                                    <th scope="col" class="text-center">Download</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for video in videos %}
+
+        {% if videos %}
+            <div class="card">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <div class="row">
+                            <table id="videos" class="table">
+                                <thead>
                                     <tr>
-                                        <td class="text-center">{{ video['name'] }}</td>
-                                        <td class="text-center"><a href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
+                                        <th scope="col" class="text-center">Title</th>
+                                        <th scope="col" class="text-center">Download</th>
                                     </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </li>
-            </ul>
-        </div>
+                                </thead>
+                                <tbody>
+                                    {% for video in videos %}
+                                        <tr>
+                                            <td class="text-center">{{ video['name'] }}</td>
+                                            <td class="text-center"><a href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Link</a></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
     </div>
 {%- endblock %}

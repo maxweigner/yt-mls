@@ -4,7 +4,59 @@
 
 {% block content %}
     {{ super() }}
-    <div class="container">
-        <a href="http://pythonhosted.org/Flask-Bootstrap">Documentation</a>. </p>
+    <div class="container" style="width: fit-content(105%)">
+        {% if running_downloads %}
+            <div class="card">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <div class="row">
+                            <table id="videos" class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="text-center">Queue</th>
+                                        <th scope="col" class="text-center">Started at</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in running_downloads %}
+                                        <tr>
+                                            <td class="text-center"><a href="{{ entry[0] }}" target="_blank">{{ entry[0] }}</a></td>
+                                            <td class="text-center">{{ entry[1] }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+                <br><br>
+
+            {% if titles %}
+                <div class="card">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <div class="row">
+                                <table id="videos" class="table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="text-center">Currently processing</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for i in range(amount) %}
+                                            <tr>
+                                                <td class="text-center"><a href="{{ urls[i] }}" target="_blank">{{ titles[i] }}</a></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            {% endif %}
+        {% endif %}
     </div>
 {%- endblock %}

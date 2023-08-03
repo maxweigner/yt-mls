@@ -3,6 +3,7 @@ import yt_dlp as ydl
 from yt_dlp import DownloadError
 import os
 import zipfile
+from datetime import datetime
 
 from base64 import b64encode
 from threading import Thread
@@ -17,9 +18,14 @@ def enqueue_download(url, update=False):
     t = Thread(target=process_general, args=(url,update))
     thread_queue.append(t)
     t.start()
+    return
 
 
 def process_general(url, update=False):
+    # get current time and put in list to be displayed on /index
+    current_time = datetime.now().time()
+    running_downloads.append([url, str(current_time.hour) + ':' + str(current_time.minute)])
+
     # wait for previous thread to finish if not first / only in list
     current_thread = threading.current_thread()
     if len(thread_queue) > 0 and thread_queue[0] is not current_thread:
@@ -38,6 +44,11 @@ def process_general(url, update=False):
         process_update(parent, query, current_thread)
     else:
         process_download(url, parent, query, current_thread)
+
+    try:
+        running_downloads.pop(0)
+    except IndexError:
+        print('*** IndexError: download could not be removed from list of running downloads. ***')
 
     return
 
