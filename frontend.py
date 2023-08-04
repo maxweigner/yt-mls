@@ -53,13 +53,17 @@ def downloader():
 
 # downloads a single file
 @frontend.route('/download/<path:file_path>', methods=['GET'])
-def download(file_path: str):
+def download(file_path):
     # if the path does not end with a slash, a single file is requested
     if '.' in file_path:
-        file_folder = ''.join([x if x not in file_path.split('/')[-1] else '' for x in file_path.split('/')])
+        split_path = file_path.split('/')
+        file_folder = ''.join([x if x not in split_path[-1] else '' for x in split_path])
 
         video = query_db('SELECT path, name, ext FROM video WHERE name = :name AND path = :path',
-                         {'name': file_path.split('/')[-1].split('.')[0], 'path': file_folder + '\\' if file_folder else ''},
+                         {
+                             'name': split_path[-1].split('.')[0],
+                             'path': file_folder + '\\' if file_folder else ''
+                         },
                          True)
 
         return send_from_directory(
