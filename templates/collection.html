@@ -25,6 +25,9 @@
             </div>
         </div>
         <div class="container" style="padding: 1.5%">
+            <form action="/delete/{{ folder }}">
+                <input type="submit" class="btn btn-danger float-start" value="Delete playlist">
+            </form>
             <form action="/download/{{ folder }}">
                 <input type="submit" class="btn btn-primary float-end" value="Download all"/>
             </form>

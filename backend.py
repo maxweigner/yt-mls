@@ -8,9 +8,20 @@ from urllib.request import urlopen
 from urllib.error import URLError
 from base64 import b64encode
 from threading import Thread
+from shutil import rmtree
 
-from db_tools import *
+from db_tools import (
+    add_new_video_to_collection,
+    query_db,
+    query_db_threaded,
+    db_add_via_update,
+    db_add_via_download,
+    update_playlist_folder_by_rowid,
+    remove_video,
+    remove_playlist
+)
 from file_cache import *
+from utils import downloads_path, dissect_file_name
 
 
 # adds thread to queue and starts it
@@ -79,6 +90,10 @@ def process_download(url, ext, parent, query, current_thread):
             # this throws DownloadError when not downloading playlist
             ydl.YoutubeDL({'quiet': True}).extract_info('https://www.youtube.com/watch?v=' + video['id'],
                                                         download=False)
+
+            # replace url with name of playlist
+            queued_downloads[0][0] = parent
+
             # add new entry to file_cache
             ids.append(video['id'])
             titles.append(video['title'])
@@ -102,6 +117,9 @@ def process_download(url, ext, parent, query, current_thread):
                 if check_already_exists(video['id']):
                     add_new_video_to_collection(parent, video['id'])
                     continue
+
+                # replace url with name of channel
+                queued_downloads[0][0] = parent
 
                 # there have been cases of duplicate urls or some with '/watch?v=@channel_name'
                 # but no consistency has been observed
@@ -127,6 +145,9 @@ def process_download(url, ext, parent, query, current_thread):
             titles.append(query['title'])
             urls.append('https://www.youtube.com/watch?v=' + query['id'])
 
+        # replace url with name of video
+        queued_downloads[0][0] = query['title']
+
         # start download
         download_all(url, ext=ext)
 
@@ -134,15 +155,15 @@ def process_download(url, ext, parent, query, current_thread):
     except Exception as e:
         print('*** ' + str(e) + ' ***')
 
-    # todo: a site with (not) finished downloads (url/datetime) would be nice so you know when it's done
-    #  downloading large playlists does take quite a while after all
-
     thread_queue.remove(current_thread)
     return
 
 
 # this is the 'controller' for the update process
 def process_update(parent, query, current_thread):
+    # replace url with name of playlist
+    queued_downloads[0][0] = parent
+
     # if updating playlist
     try:
         # this throws KeyError when downloading single file
@@ -154,6 +175,7 @@ def process_update(parent, query, current_thread):
             # this throws DownloadError when not downloading playlist
             ydl.YoutubeDL({'quiet': True}).extract_info('https://www.youtube.com/watch?v=' + video['id'],
                                                         download=False)
+
             # add new entry to file_cache
             ids.append(video['id'])
             titles.append(video['title'])
@@ -216,7 +238,8 @@ def download_all(url, ext, parent=None):
     if parent is not None:
         # insert new playlist into db and get the rowid of the new entry
         rowid_new = query_db_threaded('INSERT INTO playlist(name, url) VALUES (:name, :url) RETURNING ROWID',
-                                      {'name': parent, 'url': url})[0][0]
+                                      {'name': parent, 'url': url},
+                                      True)[0]
 
         # set the base relative path for playlists
         relativePath = parent + '\\'
@@ -232,7 +255,8 @@ def download_all(url, ext, parent=None):
             if not len(subdirs) > 0:
                 # get rowid of current playlist in 'downloads/parent/' directory
                 parent_rowid = query_db_threaded('SELECT ROWID FROM playlist WHERE name = :playlist',
-                                                 {'playlist': parent})[0][0]
+                                                 {'playlist': parent},
+                                                 True)[0]
 
                 # update previous parents directory
                 query_db_threaded('UPDATE playlist SET folder = :folder WHERE ROWID = :rowid',
@@ -327,12 +351,6 @@ def yt_download(location, ext='mp3'):
     return
 
 
-# a way to get the 'parent_root/downloads' directory; alternative for nonexistent global immutable
-# since app context does not exist where this is called, using app.config will not work
-def downloads_path() -> str:
-    return os.path.dirname(os.path.abspath(__file__)) + '\\downloads\\'
-
-
 # updates zip in or creates new zip of given directory
 def zip_folder(full_rel_path) -> tuple[str, str]:
     # get playlist name
@@ -373,6 +391,7 @@ def zip_folder(full_rel_path) -> tuple[str, str]:
     return full_rel_path, filename
 
 
+# adds all files that are in the playlist but not in its folder to the zip
 def zip_folder_not_in_directory(zip_full_rel_path):
     video_not_in_directory = query_db_threaded('SELECT path, name, ext FROM video '
                                                'INNER JOIN collection ON video.id = collection.video '
@@ -395,6 +414,7 @@ def zip_folder_not_in_directory(zip_full_rel_path):
     return
 
 
+# returns name of first zip found or empty string
 def directory_contains_zip(full_rel_path):
     for file in os.scandir(downloads_path() + full_rel_path):
         if file.name.endswith('.zip'):
@@ -402,9 +422,39 @@ def directory_contains_zip(full_rel_path):
     return ''
 
 
+# checks if yt or any given target can be reached
 def internet_available(target='http://www.youtube.com'):
     try:
         urlopen(target)
         return True
     except URLError:
         return False
+
+
+# does what it says; does not need thread of its own since it's reasonably fast
+def delete_file_or_playlist(file_name):
+    # deleting single download is simple enough
+    if '.' in file_name:
+        remove_video(file_name)
+        os.remove(downloads_path() + file_name)
+        return
+
+    # get folder from file_name
+    folder, _, _ = dissect_file_name(file_name)
+
+    # remove playlist from db and get videos that are also in other playlists
+    # todo: this needs to be tested at some point
+    videos_to_move = remove_playlist(folder)
+
+    # move all videos rescued from being deleted
+    if videos_to_move:
+        for video in videos_to_move:
+            os.rename(
+                downloads_path() + video[0] + video[1] + video[2],
+                downloads_path() + video[1] + video[2]
+            )
+
+    # delete the folder in which the playlist was stored
+    rmtree(downloads_path() + folder)
+    return
+

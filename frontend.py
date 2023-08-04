@@ -4,9 +4,16 @@ from __future__ import unicode_literals
 from flask import Blueprint, request, render_template, flash, send_from_directory, send_file
 
 from forms.download import DownloadForm
-from backend import zip_folder, zip_folder_not_in_directory, downloads_path, enqueue_download, internet_available
+from backend import (
+    zip_folder,
+    zip_folder_not_in_directory,
+    enqueue_download,
+    internet_available,
+    delete_file_or_playlist
+)
 from db_tools import query_db
 from file_cache import *
+from utils import downloads_path, dissect_file_name
 
 frontend = Blueprint('frontend', __name__)
 
@@ -51,52 +58,6 @@ def downloader():
     return render_template('flash-message.html')
 
 
-# downloads a single file
-@frontend.route('/download/<path:file_path>', methods=['GET'])
-def download(file_path):
-    # if the path does not end with a slash, a single file is requested
-    if '.' in file_path:
-        split_path = file_path.split('/')
-        file_folder = ''.join([x if x not in split_path[-1] else '' for x in split_path])
-
-        video = query_db('SELECT path, name, ext FROM video WHERE name = :name AND path = :path',
-                         {
-                             'name': split_path[-1].split('.')[0],
-                             'path': file_folder + '\\' if file_folder else ''
-                         },
-                         True)
-
-        return send_from_directory(
-            downloads_path() + video['path'],
-            video['name'] + video['ext']
-        )
-
-    # else a directory is requested
-    else:
-        zip_path, zip_name = zip_folder(file_path)
-        print(zip_path, zip_name)
-        zip_folder_not_in_directory(zip_path + zip_name)
-
-        # zip and send
-        return send_from_directory(
-            downloads_path() + zip_path,
-            zip_name
-        )
-
-
-@frontend.route('/update/<int:url_rowid>', methods=['GET'])
-def update(url_rowid):
-    url = query_db('SELECT url FROM playlist WHERE ROWID = :url_rowid',
-                   {'url_rowid': url_rowid})[0][0]
-
-    # kick off download process
-    enqueue_download(url, update=True)
-
-    # show download start confirmation
-    flash('Update enqueued and will finish in background.', 'primary')
-    return render_template('flash-message.html', titles=titles, urls=urls, amount=len(urls))
-
-
 @frontend.route('/library', methods=['GET'])
 def library():
     videos = query_db("SELECT name, ext, path FROM video "
@@ -104,6 +65,8 @@ def library():
     playlists = query_db("SELECT name, ROWID FROM playlist")
     if not playlists and not videos:
         flash('Library ist currently empty. Try downloading something!', 'primary')
+
+    # todo: searching your library for a song would be nice
 
     return render_template('library.html', videos=videos, playlists=playlists, amount=len(playlists))
 
@@ -127,6 +90,62 @@ def library_playlist():
     return render_template('collection.html', videos=videos, folder=folder)
 
 
+# sends file or playlist to client
+@frontend.route('/download/<path:file_path>', methods=['GET'])
+def download(file_path):
+    # if the path does not end with a slash, a single file is requested
+    if '.' in file_path:
+        path, name, _ = dissect_file_name(file_path)
+
+        video = query_db('SELECT path, name, ext FROM video WHERE name = :name AND path = :path',
+                         {'name': name, 'path': path},
+                         True)
+
+        return send_from_directory(
+            downloads_path() + video['path'],
+            video['name'] + video['ext']
+        )
+
+    # else a directory is requested
+    else:
+        zip_path, zip_name = zip_folder(file_path)
+        print(zip_path, zip_name)
+        zip_folder_not_in_directory(zip_path + zip_name)
+
+        # zip and send
+        return send_from_directory(
+            downloads_path() + zip_path,
+            zip_name
+        )
+
+
+@frontend.route('/delete/<path:file_name>', methods=['GET'])
+def delete(file_name):
+    delete_file_or_playlist(file_name)
+
+    if '.' in file_name:
+        flash('File has been deleted.', 'primary')
+    else:
+        flash('Playlist has been deleted.', 'primary')
+
+    return render_template('flash-message.html')
+
+
+@frontend.route('/update/<int:url_rowid>', methods=['GET'])
+def update(url_rowid):
+    url = query_db('SELECT url FROM playlist WHERE ROWID = :url_rowid',
+                   {'url_rowid': url_rowid})[0][0]
+
+    # kick off download process
+    enqueue_download(url, update=True)
+
+    # show download start confirmation
+    flash('Update enqueued and will finish in background.', 'primary')
+    return render_template('flash-message.html', titles=titles, urls=urls, amount=len(urls))
+
+
+# player as well as serve are placeholders for now
+# todo: add functionality to library
 @frontend.route('/player', methods=['GET'])
 def player():
     return render_template('video-player.html')

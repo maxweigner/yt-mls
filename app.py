@@ -2,7 +2,7 @@ from flask import Flask, current_app, g
 from flask_wtf.csrf import CSRFProtect
 
 from frontend import frontend
-from backend import get_db
+from db_tools import get_db
 from os import urandom
 
 

@@ -1,6 +1,7 @@
 from flask import g
 import sqlite3
 from file_cache import ids, titles
+from utils import dissect_file_name
 
 
 # fetches db from app context
@@ -92,3 +93,55 @@ def update_playlist_folder_by_rowid(folder, rowid):
     query_db_threaded('UPDATE playlist SET folder = :folder WHERE ROWID = :rowid',
                       {'folder': folder, 'rowid': rowid})
     return
+
+
+# removes a single video
+def remove_video(file_name: str) -> bool:
+    folder, name, ext = dissect_file_name(file_name)
+
+    rowid = query_db('DELETE FROM video '
+                     'WHERE name = :name AND path = :path AND ext = :ext '
+                     'RETURNING ROWID',
+                     {'name': name, 'path': folder, 'ext': ext},
+                     True)
+
+    return True if rowid else False
+
+
+# removes playlist and all contained videos from db
+def remove_playlist(folder):
+    rescued = rescue_videos(folder)
+
+    query_db_threaded('DELETE FROM playlist '
+                      'WHERE folder = :folder',
+                      {'folder': folder})
+
+    query_db_threaded('DELETE FROM collection '
+                      'WHERE playlist = :folder ',
+                      {'folder': folder})
+
+    query_db('DELETE FROM video '
+             'WHERE path = :path ',
+             {'path': folder})
+
+    return rescued
+
+
+# removes videos from the playlist to delete if they are also in other playlists
+# and sets path to download root
+def rescue_videos(folder):
+    videos = query_db('SELECT id, path, name, ext FROM collection '
+                      'LEFT JOIN video ON video = id '
+                      'WHERE NOT path = playlist AND path = :path',
+                      {'path': folder})
+
+    if videos:
+        for video in videos:
+            query_db('UPDATE video SET path = \'\' '
+                     'WHERE id = :id',
+                     {'id': video[0]})
+            query_db('DELETE FROM collection '
+                     'WHERE video = :id AND playlist = :playlist',
+                     {'id': video[0], 'playlist': folder})
+
+    return [(x['path'], x['name'], x['ext']) for x in videos] if videos else None
