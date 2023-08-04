@@ -12,13 +12,14 @@
                             {{ form.url.label(class_="form-label") }}
                         </div>
                         <div class="row" style="width: fit-content">
-                            <div class="col">
-                                {{ form.url(class_="form-control") }}
+                            {{ form.url(class_="form-control") }}
+                        </div>
+                        <br>
+                        <div class="row" style="width: fit-content">
+                            <div class="col-md-auto">
+                                    {{ form.ext(class_="form-select") }}
                             </div>
-                            <div class="col">
-                                {{ form.ext(class_="form-select") }}
-                            </div>
-                            <div class="col" style="width: fit-content">
+                            <div class="col-md-auto">
                                 {{ form.submit(class_="btn btn-primary") }}
                             </div>
                         </div>

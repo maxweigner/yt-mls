@@ -2,8 +2,10 @@ import threading
 import yt_dlp as ydl
 import os
 import zipfile
-from datetime import datetime
 
+from datetime import datetime
+from urllib.request import urlopen
+from urllib.error import URLError
 from base64 import b64encode
 from threading import Thread
 
@@ -21,9 +23,17 @@ def enqueue_download(url, update=False, ext='mp3'):
 
 
 def process_general(url, ext, update=False):
-    # get current time and put in list to be displayed on /index
+    # get current time
     current_time = datetime.now().time()
-    running_downloads.append([url, str(current_time.hour) + ':' + str(current_time.minute)])
+
+    # parse hour and minute
+    hour = str(current_time.hour)
+    hour = hour if len(hour) > 1 else '0' + hour
+    minute = str(current_time.minute)
+    minute = minute if len(minute) > 1 else '0' + hour
+
+    # add url and time to list of queued downloads
+    queued_downloads.append([url, hour + ':' + minute])
 
     # wait for previous thread to finish if not first / only in list
     current_thread = threading.current_thread()
@@ -45,7 +55,7 @@ def process_general(url, ext, update=False):
         process_download(url, ext, parent, query, current_thread)
 
     try:
-        running_downloads.pop(0)
+        queued_downloads.pop(0)
     except IndexError:
         print('*** IndexError: download could not be removed from list of running downloads. ***')
 
@@ -324,7 +334,7 @@ def downloads_path() -> str:
 
 
 # updates zip in or creates new zip of given directory
-def zip_folder(full_rel_path):
+def zip_folder(full_rel_path) -> tuple[str, str]:
     # get playlist name
     parent = full_rel_path.split('/')
     for folder in parent:
@@ -350,7 +360,7 @@ def zip_folder(full_rel_path):
         # create archive
         zipfile.ZipFile(downloads_path() + full_rel_path + filename, 'w')
 
-    # Open the existing zip file in append mode
+    # add remaining files to zip
     with zipfile.ZipFile(downloads_path() + full_rel_path + filename, 'a') as existing_zip:
         file_list = existing_zip.namelist()
         file_list = [e[len(parent)+1:] for e in file_list]
@@ -358,9 +368,31 @@ def zip_folder(full_rel_path):
         for entry in os.scandir(downloads_path() + full_rel_path):
             if entry.is_file() and not entry.name.endswith('.zip') and entry.name not in file_list:
                 # Add the file to the zip, preserving the directory structure
-                existing_zip.write(entry.path, arcname=parent + '\\' + entry.name)
+                existing_zip.write(entry.path, arcname=parent + '/' + entry.name)
 
-    return filename
+    return full_rel_path, filename
+
+
+def zip_folder_not_in_directory(zip_full_rel_path):
+    video_not_in_directory = query_db_threaded('SELECT path, name, ext FROM video '
+                                               'INNER JOIN collection ON video.id = collection.video '
+                                               'WHERE NOT path = playlist')
+
+    # get full path to downloads directory
+    downloads_folder = downloads_path()
+
+    # add remaining files to zip
+    with zipfile.ZipFile(downloads_folder + zip_full_rel_path, 'a') as existing_zip:
+        file_list_zip = existing_zip.namelist()
+        file_list_files = [e.split('/')[-1] for e in file_list_zip]
+        file_list_folder = file_list_zip[0].split('/')[0]
+
+        for video in video_not_in_directory:
+            file_name = video[1] + video[2]
+            if file_name not in file_list_files:
+                existing_zip.write(downloads_folder + video[0] + file_name, arcname=file_list_folder + '/' + file_name)
+
+    return
 
 
 def directory_contains_zip(full_rel_path):
@@ -368,3 +400,11 @@ def directory_contains_zip(full_rel_path):
         if file.name.endswith('.zip'):
             return file.name
     return ''
+
+
+def internet_available(target='http://www.youtube.com'):
+    try:
+        urlopen(target)
+        return True
+    except URLError:
+        return False
