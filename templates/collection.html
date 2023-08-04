@@ -16,7 +16,7 @@
                         {% for video in videos %}
                             <tr>
                                 <td class="text-center">{{ video['name'] }}</td>
-                                <td class="text-center"><a class="btn btn-link" href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Download</a></td>
+                                <td class="text-center"><a class="btn btn-link" href="/download?file={{ video['path'] + video['name'] + video['ext'] }}" download>Download</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -25,11 +25,18 @@
             </div>
         </div>
         <div class="container" style="padding: 1.5%">
-            <form action="/delete/{{ folder }}">
+            <form action="/delete">
+                <input type="hidden" name="file" value="{{ folder }}">
                 <input type="submit" class="btn btn-danger float-start" value="Delete playlist">
             </form>
-            <form action="/download/{{ folder }}">
+            <form action="/download">
+                <input type="hidden" name="file" value="{{ folder }}">
                 <input type="submit" class="btn btn-primary float-end" value="Download all"/>
+            </form>
+            <form action="/update" style="padding-right: 30%">
+                <input type="hidden" name="list" value="{{ request.args.get('playlist') }}">
+                <input type="hidden" name="from" value="/library-playlist?playlist={{ request.args.get('playlist') }}">
+                <input type="submit" class="btn btn-primary float-end" value="Update playlist"/>
             </form>
         </div>
     </div>

@@ -1,9 +1,14 @@
 from __future__ import unicode_literals
 
-
-from flask import Blueprint, request, render_template, flash, send_from_directory, send_file
-
-from forms.download import DownloadForm
+from flask import (
+    Blueprint,
+    request,
+    render_template,
+    redirect,
+    flash,
+    send_from_directory,
+    send_file
+)
 from backend import (
     zip_folder,
     zip_folder_not_in_directory,
@@ -11,6 +16,7 @@ from backend import (
     internet_available,
     delete_file_or_playlist
 )
+from forms.download import DownloadForm
 from db_tools import query_db
 from file_cache import *
 from utils import downloads_path, dissect_file_name
@@ -91,14 +97,16 @@ def library_playlist():
 
 
 # sends file or playlist to client
-@frontend.route('/download/<path:file_path>', methods=['GET'])
-def download(file_path):
+@frontend.route('/download', methods=['GET'])
+def download():
+    file_path = request.args.get('file')
     # if the path does not end with a slash, a single file is requested
     if '.' in file_path:
-        path, name, _ = dissect_file_name(file_path)
+        path, name, ext = dissect_file_name(file_path)
 
-        video = query_db('SELECT path, name, ext FROM video WHERE name = :name AND path = :path',
-                         {'name': name, 'path': path},
+        video = query_db('SELECT path, name, ext FROM video '
+                         'WHERE name = :name AND path = :path AND ext = :ext',
+                         {'name': name, 'path': path, 'ext': ext},
                          True)
 
         return send_from_directory(
@@ -119,8 +127,9 @@ def download(file_path):
         )
 
 
-@frontend.route('/delete/<path:file_name>', methods=['GET'])
-def delete(file_name):
+@frontend.route('/delete', methods=['GET'])
+def delete():
+    file_name = request.args.get('file')
     delete_file_or_playlist(file_name)
 
     if '.' in file_name:
@@ -128,20 +137,22 @@ def delete(file_name):
     else:
         flash('Playlist has been deleted.', 'primary')
 
-    return render_template('flash-message.html')
+    return redirect('/library')
 
 
-@frontend.route('/update/<int:url_rowid>', methods=['GET'])
-def update(url_rowid):
+@frontend.route('/update', methods=['GET'])
+def update():
+    url_rowid = request.args.get('list')
     url = query_db('SELECT url FROM playlist WHERE ROWID = :url_rowid',
-                   {'url_rowid': url_rowid})[0][0]
+                   {'url_rowid': url_rowid},
+                   True)[0]
 
     # kick off download process
     enqueue_download(url, update=True)
 
     # show download start confirmation
     flash('Update enqueued and will finish in background.', 'primary')
-    return render_template('flash-message.html', titles=titles, urls=urls, amount=len(urls))
+    return redirect(request.args.get('from'))
 
 
 # player as well as serve are placeholders for now

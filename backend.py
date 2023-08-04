@@ -12,7 +12,6 @@ from shutil import rmtree
 
 from db_tools import (
     add_new_video_to_collection,
-    query_db,
     query_db_threaded,
     db_add_via_update,
     db_add_via_download,

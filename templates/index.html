@@ -27,7 +27,7 @@
 
                 <br><br>
 
-            {% if titles %}
+            {% if titles and titles[0] not in running_downloads[0][0] %}
                 <div class="card">
                     <div class="card-body">
                         <table class="table">

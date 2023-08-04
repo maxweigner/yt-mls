@@ -27,14 +27,5 @@
                 </form>
             </div>
         </div>
-
-        {% if form.errors %}
-        {{ form.errors['url'][0][:-1] + ', try again.' }}
-        {% endif %}
-
-        {% if not ytLink %}
-            Please enter a full, valid YouTube URL.
-        {% endif %}
-
     </div>
 {%- endblock %}

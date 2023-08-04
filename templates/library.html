@@ -17,7 +17,7 @@
                             {% for playlist in playlists %}
                                 <tr>
                                     <td class="text-center align-middle"><a class="btn btn-link" href="/library-playlist?playlist={{ playlist['ROWID'] }}">{{ playlist['name'] }}</a></td>
-                                    <td class="text-center align-middle"><a class="btn btn-link" href="/update/{{ playlist[1] }}">Start</a></td>
+                                    <td class="text-center align-middle"><a class="btn btn-link" href="/update?list={{ playlist[1] }}&from=/library">Start</a></td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -36,6 +36,7 @@
                             <tr>
                                 <th scope="col" class="text-center align-middle">Titles not in any playlist</th>
                                 <th scope="col" class="text-center align-middle">Download</th>
+                                <th scope="col" class="text-center align-middle">Delete</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -43,14 +44,16 @@
                                 {% if 'mp3' in video['ext'] %}
                                 <tr>
                                     <td class="text-center align-middle">{{ video['name'] }}</td>
-                                    <td class="text-center align-middle"><a class="btn btn-link" href="/download/{{ video['path'] + video['name'] + video['ext'] }}" download>Download</a></td>
+                                    <td class="text-center align-middle"><a class="btn btn-link" href="/download?file={{ video['path'] + video['name'] + video['ext'] }}" download>Download</a></td>
+                                    <td class="text-center align-middle"><a class="btn btn-danger" href="/delete?file={{ video['path'] + video['name'] + video['ext'] }}&from=/library"> </a></td>
                                 </tr>
                                 {% endif %}
 
                                 {% if 'mp4' in video['ext'] %}
                                     <tr>
-                                        <td class="text-center align-middle">{{ video['name'] }}</td>
-                                        <td class="text-center align-middle"><a class="btn btn-link" href="/player?file={{ video['path'] + video['name'] + video['ext'] }}">Watch</a></td>
+                                        <td class="text-center align-middle"><a class="btn btn-link" href="/player?file={{ video['path'] + video['name'] + video['ext'] }}">{{ video['name'] }}</a></td>
+                                        <td class="text-center align-middle"><a class="btn btn-link" href="/download?file={{ video['path'] + video['name'] + video['ext'] }}" download>Download</a></td>
+                                        <td class="text-center align-middle"><a class="btn btn-danger" href="/delete?file={{ video['path'] + video['name'] + video['ext'] }}&from=library"> </a>
                                     </tr>
                                 {% endif %}
                             {% endfor %}

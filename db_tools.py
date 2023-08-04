@@ -96,29 +96,27 @@ def update_playlist_folder_by_rowid(folder, rowid):
 
 
 # removes a single video
-def remove_video(file_name: str) -> bool:
+def remove_video(file_name):
     folder, name, ext = dissect_file_name(file_name)
 
-    rowid = query_db('DELETE FROM video '
-                     'WHERE name = :name AND path = :path AND ext = :ext '
-                     'RETURNING ROWID',
-                     {'name': name, 'path': folder, 'ext': ext},
-                     True)
+    query_db('DELETE FROM video '
+             'WHERE name = :name AND path = :path AND ext = :ext',
+             {'name': name, 'path': folder, 'ext': ext})
 
-    return True if rowid else False
+    return
 
 
 # removes playlist and all contained videos from db
 def remove_playlist(folder):
     rescued = rescue_videos(folder)
 
-    query_db_threaded('DELETE FROM playlist '
-                      'WHERE folder = :folder',
-                      {'folder': folder})
+    query_db('DELETE FROM playlist '
+             'WHERE folder = :folder',
+             {'folder': folder})
 
-    query_db_threaded('DELETE FROM collection '
-                      'WHERE playlist = :folder ',
-                      {'folder': folder})
+    query_db('DELETE FROM collection '
+             'WHERE playlist = :folder ',
+             {'folder': folder})
 
     query_db('DELETE FROM video '
              'WHERE path = :path ',
