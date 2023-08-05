@@ -9,7 +9,7 @@ def downloads_path() -> str:
 
 # dissects a given full path to a file into its components
 def dissect_file_name(file_name: str) -> tuple[str, str, str]:
-    split_path = file_name.replace('/', '\\').split('\\')
+    split_path = file_name.split('/')
     full_name = split_path[-1].split('.')
 
     folder = ''.join([x + '\\' if x and '.' not in x else '' for x in split_path])
