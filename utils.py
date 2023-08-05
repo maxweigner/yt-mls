@@ -12,7 +12,7 @@ def dissect_file_name(file_name: str) -> tuple[str, str, str]:
     split_path = file_name.split('/')
     full_name = split_path[-1].split('.')
 
-    folder = ''.join([x + '\\' if x and '.' not in x else '' for x in split_path])
+    folder = ''.join([x + '/' if x and '.' not in x else '' for x in split_path])
     name = full_name[0] if full_name[0] else ''
     ext = '.' + full_name[1] if full_name[0] else ''
 
