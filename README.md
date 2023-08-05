@@ -49,10 +49,11 @@ Restart the jail and you're done.
 
 ### configuration
 
-Starting the server using `waitress.serve` is handled by server.py.
-The default port is `5000` and can be changed by editing the `PORT` variable in the script. 
+In `server.py` you can change:
+- `PORT`
+- `MAX_VIDEO_DOWNLOAD_LENGTH_MINUTES`
 
-If you want to limit the duration of videos you want to download e.g. if you want to download only single titles from a playlist with mixes, set `MAX_VIDEO_DOWNLOAD_LENGTH_MINUTES` to the desired amount. Default is `10` minutes.
+With the default settings, the server will be up and running on port `5000` and will not download videos longer than `10` minutes.
 
 
 ## currently not supported
