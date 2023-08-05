@@ -17,18 +17,36 @@ Currently supported is YouTube but its possible to expand since the download its
 To deploy this app, you need a production-ready WSGI server like Waitress. Do not use the Flask built-in development server.
 
 
-### Deployment with waitress:
+### waitress in truenas jail
 Clone the repo or download as zip and unpack.
-Navigate into the created directory.
 
 ```
-$ python -m venv .venv
-$ . .venv/bin/activate
+$ git clone https://github.com/maxweigner/yt-mls.git
+$ cd yt-mls
+$ pkg install python39 py39-pip py39-sqlite3 ffmpeg
 $ pip install -r requirements.txt
-$ python server.py
+$ pip install supervisord
+$ python -m venv venv
+$ source venv/bin/activate.csh
+$ pip install -r requirements.txt
+$ touch supervisord.conf
 ```
+Put the following into `supervisord.conf`
+```
+[supervisord]
 
-Install ffmpeg / ffprobe.
+[program:ytmls]
+command=/usr/local/bin/python /root/yt-mls/server.py ;
+directory=/root/yt-mls ;
+autostart=true ;
+autorestart=true ;
+```
+Run `crontab -e` and add the following line
+```
+@reboot /usr/local/bin/supervisord -c /root/yt-mls/supervisord.conf
+```
+Restart the jail and you're done.
+
 
 ### configuration
 
