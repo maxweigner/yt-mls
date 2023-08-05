@@ -4,7 +4,7 @@ import os.path as path
 # a way to get the 'parent_root/downloads' directory; alternative for nonexistent global immutable
 # since app context does not exist where this is called, using app.config will not work
 def downloads_path() -> str:
-    return path.dirname(path.abspath(__file__)) + '\\downloads\\'
+    return path.dirname(path.abspath(__file__)) + '/downloads/'
 
 
 # dissects a given full path to a file into its components

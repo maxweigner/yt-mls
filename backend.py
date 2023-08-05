@@ -276,12 +276,12 @@ def download_all(url, ext, parent=None):
                                       True)[0]
 
         # set the base relative path for playlists
-        relativePath = parent + '\\'
+        relativePath = parent + '/'
 
         # does that subdirectory already exist?
-        if os.path.exists(f'downloads\\{parent}'):
+        if os.path.exists(f'downloads/{parent}'):
             subdirs = []
-            for file in os.scandir(f'downloads\\{parent}'):
+            for file in os.scandir(f'downloads/{parent}'):
                 if file.is_dir():
                     subdirs.append(file)
 
@@ -294,24 +294,24 @@ def download_all(url, ext, parent=None):
 
                 # update previous parents directory
                 query_db_threaded('UPDATE playlist SET folder = :folder WHERE ROWID = :rowid',
-                                  {'folder': relativePath + str(parent_rowid) + '\\', 'rowid': parent_rowid})
+                                  {'folder': relativePath + str(parent_rowid) + '/', 'rowid': parent_rowid})
 
                 # update the folder entry in collection
                 query_db_threaded('UPDATE collection SET playlist = :folder WHERE playlist = :folder_old',
-                                  {'folder': relativePath + str(parent_rowid) + '\\', 'folder_old': relativePath})
+                                  {'folder': relativePath + str(parent_rowid) + '/', 'folder_old': relativePath})
 
                 # move all files into subdirectory 'downloads/parent/rowid'
-                srcpath = downloads_path() + parent + '\\'
-                dstpath = srcpath + str(parent_rowid) + '\\'
+                srcpath = downloads_path() + parent + '/'
+                dstpath = srcpath + str(parent_rowid) + '/'
                 for f in os.scandir(srcpath):
                     os.renames(srcpath + f.name, dstpath + f.name)
 
                 # adjust path in db table video
                 query_db_threaded('UPDATE video SET path = :new_path WHERE path = :old_path',
-                                  {'new_path': relativePath + str(parent_rowid) + '\\', 'old_path': relativePath})
+                                  {'new_path': relativePath + str(parent_rowid) + '/', 'old_path': relativePath})
 
                 # append relative path
-                relativePath += str(rowid_new) + '\\'
+                relativePath += str(rowid_new) + '/'
 
             # set the relative path of playlist in recently added entry
             update_playlist_folder_by_rowid(relativePath, rowid_new)

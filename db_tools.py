@@ -44,12 +44,12 @@ def db_add_via_download(ext, parent_rowid=None, parent=None):
     # if a parent was specified
     else:
         # set relative path
-        relative_path = parent + '\\'
+        relative_path = parent + '/'
 
         # if a rowid was specified
         if parent_rowid is not None:
             # adjust the relative path
-            relative_path += str(parent_rowid) + '\\'
+            relative_path += str(parent_rowid) + '/'
 
         # insert all new files into db
         for i in range(len(titles)):
@@ -76,10 +76,10 @@ def add_new_video(video_id, name, ext, path):
 
 def add_new_video_to_collection(parent, video_id):
     exists = query_db_threaded('SELECT * FROM collection WHERE playlist = :folder AND video = :id',
-                               {'folder': parent + '\\', 'id': video_id})
+                               {'folder': parent + '/', 'id': video_id})
 
     if not len(exists) > 0:
-        add_collection_entry(parent + '\\', video_id)
+        add_collection_entry(parent + '/', video_id)
 
     return
 

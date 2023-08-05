@@ -109,7 +109,7 @@ def download():
 
         # this is flaky for whatever reason; might be because of special chars?
         return send_from_directory(
-            'downloads\\' + path,
+            'downloads/' + path,
             name + ext
         )
 
