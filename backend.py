@@ -40,7 +40,7 @@ def process_general(url, ext, update=False):
     hour = str(current_time.hour)
     hour = hour if len(hour) > 1 else '0' + hour
     minute = str(current_time.minute)
-    minute = minute if len(minute) > 1 else '0' + hour
+    minute = minute if len(minute) > 1 else '0' + minute
 
     # add url and time to list of queued downloads
     queued_downloads.append([url, hour + ':' + minute])
@@ -56,7 +56,7 @@ def process_general(url, ext, update=False):
     urls.clear()
 
     # get basic info for given url
-    query = ydl.YoutubeDL({'quiet': True}).extract_info(url=url, download=False)
+    query = ydl.YoutubeDL({'quiet': True, 'ignoreerrors': True}).extract_info(url=url, download=False)
     parent = query['title']
 
     if update:
@@ -82,7 +82,7 @@ def process_download(url, ext, parent, query, current_thread):
     try:
         # this throws KeyError when downloading single file
         for video in query['entries']:
-            if check_already_exists(video['id']):
+            if video is not None and check_already_exists(video['id']):
                 add_new_video_to_collection(parent, video['id'])
                 continue
 
@@ -113,7 +113,7 @@ def process_download(url, ext, parent, query, current_thread):
         for tab in query['entries']:
             # for every video in their respective tabs
             for video in tab['entries']:
-                if check_already_exists(video['id']):
+                if video is not None and check_already_exists(video['id']):
                     add_new_video_to_collection(parent, video['id'])
                     continue
 
@@ -325,6 +325,7 @@ def yt_download(location, ext='mp3'):
     # base download options for audio
     opts = {
         'quiet': True,
+        'ignoreerrors': True,
         'windowsfilenames': True,
         'outtmpl': location + '%(title)s.%(ext)s',
         'format': 'bestaudio/best',
@@ -342,10 +343,7 @@ def yt_download(location, ext='mp3'):
         opts.pop('postprocessors')
 
     # try to download all new files
-    try:
-        ydl.YoutubeDL(opts).download(urls)
-    except ydl.DownloadError:
-        pass
+    ydl.YoutubeDL(opts).download(urls)
 
     return
 

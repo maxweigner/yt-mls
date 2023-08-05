@@ -61,7 +61,7 @@ def downloader():
 
     # show download start confirmation
     flash('Download enqueued and will finish in background.', 'primary')
-    return render_template('flash-message.html')
+    return redirect('/downloader')
 
 
 @frontend.route('/library', methods=['GET'])
@@ -104,14 +104,10 @@ def download():
     if '.' in file_path:
         path, name, ext = dissect_file_name(file_path)
 
-        video = query_db('SELECT path, name, ext FROM video '
-                         'WHERE name = :name AND path = :path AND ext = :ext',
-                         {'name': name, 'path': path, 'ext': ext},
-                         True)
-
+        # this is flaky for whatever reason; might be because of special chars?
         return send_from_directory(
-            downloads_path() + video['path'],
-            video['name'] + video['ext']
+            'downloads\\' + path,
+            name + ext
         )
 
     # else a directory is requested
