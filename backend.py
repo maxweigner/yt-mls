@@ -497,9 +497,14 @@ def check_file_path(path):
     return downloads in os.path.abspath(downloads + path)
 
 
+# sanitizes file names for windows fs
+# replaces the chars with those used by yt-dlp as a substitution
 def sanitize_filename(file_name: str):
+    # '<' and '>' are not allowed on yt
     return (file_name
             .replace('\\', '⧹')
+            .replace('/', '⧸')
+            .replace('|', '｜')
             .replace(':', '：')
             .replace('*', '＊')
             .replace('?', '？')
