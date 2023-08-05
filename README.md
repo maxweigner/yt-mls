@@ -18,8 +18,7 @@ To deploy this app, you need a production-ready WSGI server like Waitress. Do no
 
 
 ### waitress in truenas jail
-Clone the repo or download as zip and unpack.
-
+The following works in a 13.2 base jail:
 ```
 $ git clone https://github.com/maxweigner/yt-mls.git
 $ cd yt-mls
