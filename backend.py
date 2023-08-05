@@ -85,6 +85,8 @@ def process_download(url, ext, parent, query, current_thread):
             if video is None:
                 continue
 
+            video['title'] = sanitize_filename(video['title'])
+
             if check_already_exists(video['id']):
                 add_new_video_to_collection(parent, video['id'])
                 continue
@@ -94,14 +96,14 @@ def process_download(url, ext, parent, query, current_thread):
                                                         download=False)
 
             # replace url with name of playlist
-            queued_downloads[0][0] = parent.replace('/', '⧸')
+            queued_downloads[0][0] = sanitize_filename(parent)
 
             if max_video_length and video['duration'] > max_video_length:
                 continue
 
             # add new entry to file_cache
             ids.append(video['id'])
-            titles.append(video['title'].replace('/', '⧸'))
+            titles.append(video['title'])
             urls.append('https://www.youtube.com/watch?v=' + video['id'])
 
         # start download
@@ -122,12 +124,14 @@ def process_download(url, ext, parent, query, current_thread):
                 if video is None:
                     continue
 
+                video['title'] = sanitize_filename(video['title'])
+
                 if check_already_exists(video['id']):
                     add_new_video_to_collection(parent, video['id'])
                     continue
 
                 # replace url with name of channel
-                queued_downloads[0][0] = parent.replace('/', '⧸')
+                queued_downloads[0][0] = sanitize_filename(parent)
 
                 if max_video_length and video['duration'] > max_video_length:
                     continue
@@ -136,7 +140,7 @@ def process_download(url, ext, parent, query, current_thread):
                 # but no consistency has been observed
                 # still works though so will not be checked for now
                 ids.append(video['id'])
-                titles.append(video['title'].replace('/', '⧸'))
+                titles.append(video['title'])
                 urls.append('https://www.youtube.com/watch?v=' + video['id'])
 
         # start download
@@ -153,11 +157,14 @@ def process_download(url, ext, parent, query, current_thread):
         # when downloading single files that already exist, there's no need for adjustments in db
         if not check_already_exists(query['id']):
             ids.append(query['id'])
-            titles.append(query['title'].replace('/', '⧸'))
+            query['title'] = sanitize_filename(query['title'])
+            titles.append(query['title'])
             urls.append('https://www.youtube.com/watch?v=' + query['id'])
+        else:
+            return
 
         # replace url with name of video
-        queued_downloads[0][0] = query['title'].replace('/', '⧸')
+        queued_downloads[0][0] = query['title']
 
         # start download
         download_all(url, ext=ext)
@@ -173,7 +180,7 @@ def process_download(url, ext, parent, query, current_thread):
 # this is the 'controller' for the update process
 def process_update(parent, query, current_thread):
     # replace url with name of playlist
-    queued_downloads[0][0] = parent
+    queued_downloads[0][0] = sanitize_filename(parent)
 
     # if updating playlist
     try:
@@ -181,6 +188,8 @@ def process_update(parent, query, current_thread):
         for video in query['entries']:
             if video is None:
                 continue
+
+            video['title'] = video['title'].replace('/', '⧸').replace('|', '｜')
 
             if check_already_exists(video['id']):
                 add_new_video_to_collection(parent, video['id'])
@@ -215,6 +224,8 @@ def process_update(parent, query, current_thread):
             for video in tab['entries']:
                 if video is None:
                     continue
+
+                video['title'] = video['title'].replace('/', '⧸').replace('|', '｜')
 
                 if check_already_exists(video['id']):
                     add_new_video_to_collection(parent, video['id'])
@@ -340,7 +351,7 @@ def update_all():
                                     True)
 
     yt_download(downloads_path() + folder, ext[1:])
-    db_add_via_update(folder, ext)
+    db_add_via_update(folder, ext[1:])
     return
 
 
@@ -484,3 +495,12 @@ def delete_file_or_playlist(file_name):
 def check_file_path(path):
     downloads = downloads_path()
     return downloads in os.path.abspath(downloads + path)
+
+
+def sanitize_filename(file_name: str):
+    return (file_name
+            .replace('\\', '⧹')
+            .replace(':', '：')
+            .replace('*', '＊')
+            .replace('?', '？')
+            .replace('"', '＂'))

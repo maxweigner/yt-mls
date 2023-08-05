@@ -162,7 +162,7 @@ def player():
 
 @frontend.route('/serve', methods=['GET'])
 def serve():
-    file = request.args.get('file').replace('/', '').replace('\\', '')
+    file = request.args.get('file')
     if not check_file_path(file):
         flash('Video not found', 'danger')
         return render_template('flash-message.html')
@@ -176,6 +176,6 @@ def serve():
     elif 'mp4' in file:
         return send_file(
             downloads_path() + file,
-            'video/webm',
+            'video/mp4',
             True
         )
