@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import os.path
+
 from flask import (
     Blueprint,
     request,
@@ -14,7 +16,8 @@ from backend import (
     zip_folder_not_in_directory,
     enqueue_download,
     internet_available,
-    delete_file_or_playlist
+    delete_file_or_playlist,
+    check_file_path
 )
 from forms.download import DownloadForm
 from db_tools import query_db
@@ -50,7 +53,7 @@ def downloader():
     # if there has been a problem with the form (empty or error) or the link is not valid
     if not form.validate_on_submit() or not valid_link:
         valid_link = True if url == 'None' else False  # if url is empty, don't show error
-        return render_template('downloader.html', form=form, ytLink=valid_link, amount=len(urls))
+        return render_template('downloader.html', form=form, amount=len(urls))
 
     if not internet_available():
         flash('No internet connection available.', 'danger')
@@ -113,7 +116,6 @@ def download():
     # else a directory is requested
     else:
         zip_path, zip_name = zip_folder(file_path)
-        print(zip_path, zip_name)
         zip_folder_not_in_directory(zip_path + zip_name)
 
         # zip and send
@@ -155,23 +157,25 @@ def update():
 # todo: add functionality to library
 @frontend.route('/player', methods=['GET'])
 def player():
-    return render_template('video-player.html')
+    return render_template('player.html', file=request.args.get('file'))
 
 
 @frontend.route('/serve', methods=['GET'])
 def serve():
-    file = request.args.get('file', None)
-    if 'audio' in file:
-        file = r'downloads\\CptCatman\\my vital organs all lift together.mp3'
+    file = request.args.get('file').replace('/', '').replace('\\', '')
+    if not check_file_path(file):
+        flash('Video not found', 'danger')
+        return render_template('flash-message.html')
+
+    if 'mp3' in file:
         return send_file(
-            file,
+            downloads_path() + file,
             'audio/mpeg',
             True
         )
-    else:
-        file = r'downloads\\Rick Astley - Never Gonna Give You Up (Official Music Video).webm'
+    elif 'mp4' in file:
         return send_file(
-            file,
+            downloads_path() + file,
             'video/webm',
             True
         )

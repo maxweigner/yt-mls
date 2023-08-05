@@ -16,7 +16,7 @@
                         <tbody>
                             {% for entry in running_downloads %}
                                 <tr>
-                                    <td class="text-center"><a href="{{ entry[0] }}" target="_blank">{{ entry[0] }}</a></td>
+                                    <td class="text-center">{{ entry[0] }}</td>
                                     <td class="text-center">{{ entry[1] }}</td>
                                 </tr>
                             {% endfor %}
@@ -33,7 +33,7 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th scope="col" class="text-center">Currently processing</th>
+                                    <th scope="col" class="text-center">New downloads in {{ running_downloads[0][0] }}</th>
                                 </tr>
                             </thead>
                             <tbody>

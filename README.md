@@ -5,12 +5,11 @@ YouTube Media Library Server aims to make downloading and updating media librari
 - Download of channels, playlists and videos in mp3 or mp4
 - Download of processed files either individually or entire channels and playlists as a .zip
 - Update of channels and playlists from the library
+- Watching videos via an embed
 
 
 # currently not supported
 Having the same video in mp3 _and_ mp4 is not possible with how the download process and database work. This includes channels and playlists. The chosen type on initial download dictates what you have.
-
-Deleting files will be added soon:tm:.
 
 
 # media sources

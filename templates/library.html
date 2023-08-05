@@ -43,7 +43,7 @@
                             {% for video in videos %}
                                 {% if 'mp3' in video['ext'] %}
                                 <tr>
-                                    <td class="text-center align-middle">{{ video['name'] }}</td>
+                                    <td class="text-center align-middle"><a class="btn btn-link" href="/player?file={{ video['path'] + video['name'] + video['ext'] }}">{{ video['name'] }}</a></td>
                                     <td class="text-center align-middle"><a class="btn btn-link" href="/download?file={{ video['path'] + video['name'] + video['ext'] }}" download>Download</a></td>
                                     <td class="text-center align-middle"><a class="btn btn-danger" href="/delete?file={{ video['path'] + video['name'] + video['ext'] }}&from=/library"> </a></td>
                                 </tr>

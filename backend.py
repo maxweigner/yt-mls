@@ -82,7 +82,10 @@ def process_download(url, ext, parent, query, current_thread):
     try:
         # this throws KeyError when downloading single file
         for video in query['entries']:
-            if video is not None and check_already_exists(video['id']):
+            if video is None:
+                continue
+
+            if check_already_exists(video['id']):
                 add_new_video_to_collection(parent, video['id'])
                 continue
 
@@ -91,11 +94,14 @@ def process_download(url, ext, parent, query, current_thread):
                                                         download=False)
 
             # replace url with name of playlist
-            queued_downloads[0][0] = parent
+            queued_downloads[0][0] = parent.replace('/', '⧸')
+
+            if max_video_length and video['duration'] > max_video_length:
+                continue
 
             # add new entry to file_cache
             ids.append(video['id'])
-            titles.append(video['title'])
+            titles.append(video['title'].replace('/', '⧸'))
             urls.append('https://www.youtube.com/watch?v=' + video['id'])
 
         # start download
@@ -113,18 +119,24 @@ def process_download(url, ext, parent, query, current_thread):
         for tab in query['entries']:
             # for every video in their respective tabs
             for video in tab['entries']:
-                if video is not None and check_already_exists(video['id']):
+                if video is None:
+                    continue
+
+                if check_already_exists(video['id']):
                     add_new_video_to_collection(parent, video['id'])
                     continue
 
                 # replace url with name of channel
-                queued_downloads[0][0] = parent
+                queued_downloads[0][0] = parent.replace('/', '⧸')
+
+                if max_video_length and video['duration'] > max_video_length:
+                    continue
 
                 # there have been cases of duplicate urls or some with '/watch?v=@channel_name'
                 # but no consistency has been observed
                 # still works though so will not be checked for now
                 ids.append(video['id'])
-                titles.append(video['title'])
+                titles.append(video['title'].replace('/', '⧸'))
                 urls.append('https://www.youtube.com/watch?v=' + video['id'])
 
         # start download
@@ -141,11 +153,11 @@ def process_download(url, ext, parent, query, current_thread):
         # when downloading single files that already exist, there's no need for adjustments in db
         if not check_already_exists(query['id']):
             ids.append(query['id'])
-            titles.append(query['title'])
+            titles.append(query['title'].replace('/', '⧸'))
             urls.append('https://www.youtube.com/watch?v=' + query['id'])
 
         # replace url with name of video
-        queued_downloads[0][0] = query['title']
+        queued_downloads[0][0] = query['title'].replace('/', '⧸')
 
         # start download
         download_all(url, ext=ext)
@@ -167,6 +179,9 @@ def process_update(parent, query, current_thread):
     try:
         # this throws KeyError when downloading single file
         for video in query['entries']:
+            if video is None:
+                continue
+
             if check_already_exists(video['id']):
                 add_new_video_to_collection(parent, video['id'])
                 continue
@@ -174,6 +189,9 @@ def process_update(parent, query, current_thread):
             # this throws DownloadError when not downloading playlist
             ydl.YoutubeDL({'quiet': True}).extract_info('https://www.youtube.com/watch?v=' + video['id'],
                                                         download=False)
+
+            if max_video_length and video['duration'] > max_video_length:
+                continue
 
             # add new entry to file_cache
             ids.append(video['id'])
@@ -195,8 +213,14 @@ def process_update(parent, query, current_thread):
         for tab in query['entries']:
             # for every video in their respective tabs
             for video in tab['entries']:
+                if video is None:
+                    continue
+
                 if check_already_exists(video['id']):
                     add_new_video_to_collection(parent, video['id'])
+                    continue
+
+                if max_video_length and video['duration'] > max_video_length:
                     continue
 
                 # there have been cases of duplicate urls or some with '/watch?v=@channel_name'
@@ -339,7 +363,7 @@ def yt_download(location, ext='mp3'):
     # if videos are wanted, adjust the options
     if ext == 'mp4':
         opts['format'] = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]'
-        opts.pop('format')
+        opts['merge_output_format'] = 'mp4'
         opts.pop('postprocessors')
 
     # try to download all new files
@@ -455,3 +479,8 @@ def delete_file_or_playlist(file_name):
     rmtree(downloads_path() + folder)
     return
 
+
+# checks if file is somewhere in downloads directory and returns true if so
+def check_file_path(path):
+    downloads = downloads_path()
+    return downloads in os.path.abspath(downloads + path)

@@ -1,0 +1,21 @@
+{%- extends "base.html" %}
+
+{% block content %}
+    {{ super() }}
+    <div class="container-fluid">
+        {% if 'mp4' in file %}
+        <div class="section d-flex justify-content-center embed-responsive embed-responsive-16by9" style="padding: 1.5%">
+            <video class="embed-responsive-item" style="width: 100%; height: auto" controls>
+                <source src="serve?file={{ file }}" type="video/webm">
+            </video>
+        </div>
+        {% endif %}
+        {% if 'mp3' in file %}
+            <div class="section d-flex justify-content-center embed-responsive" style="padding: 1.5%">
+                <audio class="embed-responsive-item" controls>
+                    <source src="serve?file={{ file }}" type="audio/mpeg">
+                </audio>
+            </div>
+        {% endif %}
+    </div>
+{%- endblock %}
