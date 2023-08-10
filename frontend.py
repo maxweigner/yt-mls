@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import os.path
-
 from flask import (
     Blueprint,
     request,
@@ -17,6 +15,7 @@ from backend import (
     enqueue_download,
     internet_available,
     delete_file_or_playlist,
+    enqueue_ingest,
     check_file_path
 )
 from forms.download import DownloadForm
@@ -52,7 +51,6 @@ def downloader():
 
     # if there has been a problem with the form (empty or error) or the link is not valid
     if not form.validate_on_submit() or not valid_link:
-        valid_link = True if url == 'None' else False  # if url is empty, don't show error
         return render_template('downloader.html', form=form, amount=len(urls))
 
     if not internet_available():
@@ -70,7 +68,8 @@ def downloader():
 @frontend.route('/library', methods=['GET'])
 def library():
     videos = query_db("SELECT name, ext, path FROM video "
-                      "LEFT JOIN collection ON video.id = collection.video WHERE collection.video IS NULL ")
+                      "LEFT JOIN collection ON video.id = collection.video "
+                      "WHERE video.path = '' ")
     playlists = query_db("SELECT name, ROWID FROM playlist")
     if not playlists and not videos:
         flash('Library ist currently empty. Try downloading something!', 'primary')
@@ -84,7 +83,7 @@ def library():
 def library_playlist():
     playlist = request.args.get('playlist', None)
     videos = query_db('SELECT video.name, video.ext, video.path FROM video '
-                      'LEFT JOIN collection ON video.id = collection.video '
+                      'LEFT JOIN collection ON video.id = collection.video OR video.ROWID = collection.video '
                       'LEFT JOIN playlist ON collection.playlist=playlist.folder '
                       'WHERE playlist.ROWID = :playlist',
                       {'playlist': playlist})
@@ -145,6 +144,10 @@ def update():
                    {'url_rowid': url_rowid},
                    True)[0]
 
+    if url is None:
+        flash('Playlist has no URL. It probably was added from disk.', 'danger')
+        return redirect(request.args.get('from'))
+
     # kick off download process
     enqueue_download(url, update=True)
 
@@ -179,3 +182,10 @@ def serve():
             'video/mp4',
             True
         )
+
+
+@frontend.route('/ingest', methods=['GET'])
+def ingest():
+    enqueue_ingest()
+    flash('Ingest started', 'primary')
+    return redirect('/library')

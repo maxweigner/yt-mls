@@ -6,8 +6,13 @@ YouTube Media Library Server aims to make downloading and updating media librari
 - Download of channels, playlists and videos in mp3 or mp4
 - Download of processed files either individually or entire channels and playlists as a .zip
 - Update of channels and playlists from the library
+- Ingesting folders manually added to downloads folder
 - Watching videos via an embed
 - Listening to song via an embed
+
+### what could be added eventually
+- Search function in library
+
 
 ## media sources
 Currently supported is YouTube but its possible to expand since the download itself is handled by yt-dlp.
@@ -58,3 +63,7 @@ With the default settings, the server will be up and running on port `5000` and 
 
 ## currently not supported
 Having the same video in mp3 _and_ mp4 is not possible with how the download process and database work. This includes channels and playlists. The chosen type on initial download dictates what you have.
+
+## suboptimal
+Downloading as well as updating large playlists or channels can take hours but does not take up a lot of bandwidth. 
+Updating could be sped up but involves either making an own extractor / crawler or an elaborate construct around the existing one provided by yt-dlp. Currently every item gets crawled even if only a handful of new videos got added.

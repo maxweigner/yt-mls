@@ -64,11 +64,7 @@ def process_general(url, ext, update=False):
     else:
         process_download(url, ext, parent, query, current_thread)
 
-    try:
-        queued_downloads.pop(0)
-    except IndexError:
-        print('*** IndexError: download could not be removed from list of running downloads. ***')
-
+    queued_downloads.pop(0)
     return
 
 
@@ -366,8 +362,7 @@ def yt_download(location, ext='mp3'):
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': 192
+            'preferredcodec': 'mp3'
         }]
     }
 
@@ -413,7 +408,7 @@ def zip_folder(full_rel_path) -> tuple[str, str]:
     # add remaining files to zip
     with zipfile.ZipFile(downloads_path() + full_rel_path + filename, 'a') as existing_zip:
         file_list = existing_zip.namelist()
-        file_list = [e[len(parent)+1:] for e in file_list]
+        file_list = [e[len(parent) + 1:] for e in file_list]
 
         for entry in os.scandir(downloads_path() + full_rel_path):
             if entry.is_file() and not entry.name.endswith('.zip') and entry.name not in file_list:
@@ -463,6 +458,80 @@ def internet_available(target='http://www.youtube.com'):
         return False
 
 
+def enqueue_ingest():
+    t = Thread(target=manual_ingest)
+    thread_queue.append(t)
+    t.start()
+    return
+
+
+def manual_ingest():
+    # get current time
+    current_time = datetime.now().time()
+
+    # parse hour and minute
+    hour = str(current_time.hour)
+    hour = hour if len(hour) > 1 else '0' + hour
+    minute = str(current_time.minute)
+    minute = minute if len(minute) > 1 else '0' + minute
+
+    # add ingest and time to queue
+    queued_downloads.append(['Manual Ingest', hour + ':' + minute])
+
+    # wait for previous thread to finish if not first / only in list
+    current_thread = threading.current_thread()
+    if len(thread_queue) > 0 and thread_queue[0] is not current_thread:
+        threading.Thread.join(thread_queue[thread_queue.index(current_thread) - 1])
+
+    # get length of download root to slice path
+    dl_path_length = len(downloads_path())
+
+    for folder, _, files in os.walk(downloads_path()):
+        for file in files:
+            file_split = file.split('.')
+
+            path = folder.replace('\\', '/')[dl_path_length:]
+            if len(path) > 0:
+                path += '/'
+
+            ext = '.' + file_split[-1]
+            name = file[:-len(ext)]
+
+            # if file not already in db
+            if not len(query_db_threaded('SELECT ROWID FROM video '
+                                         'WHERE path = :path AND name = :name AND ext = :ext',
+                                         {'path': path, 'name': name, 'ext': ext})):
+
+                # insert without id
+                video_rowid = query_db_threaded('INSERT INTO video(path, name, ext) VALUES (:path, :name, :ext) '
+                                                'RETURNING ROWID',
+                                                {'path': path, 'name': name, 'ext': ext},
+                                                True)[0]
+
+                # skip next if title not in playlist but in downloads root
+                if not path:
+                    continue
+
+                query = query_db_threaded('SELECT ROWID FROM playlist WHERE folder = :path',
+                                          {'path': path})
+
+                # if title added to existing playlist / folder
+                query_db_threaded('INSERT INTO collection(playlist, video) VALUES (:path, :rowid)',
+                                  {'path': path, 'rowid': video_rowid})
+
+                # if title in new playlist / folder (supposed to happen max once)
+                if not len(query):
+                    path_split = path.split('/')
+                    playlist_name = ''.join([p if type(p) is not int else '' for p in path_split])
+                    # create new playlist
+                    query_db_threaded('INSERT INTO playlist(folder, name) VALUES (:path, :name)',
+                                      {'path': path, 'name': playlist_name})
+
+    queued_downloads.pop(0)
+    thread_queue.remove(current_thread)
+    return
+
+
 # does what it says; does not need thread of its own since it's reasonably fast
 def delete_file_or_playlist(file_name):
     # deleting single download is simple enough
@@ -494,7 +563,9 @@ def delete_file_or_playlist(file_name):
 # checks if file is somewhere in downloads directory and returns true if so
 def check_file_path(path):
     downloads = downloads_path()
-    return downloads in os.path.abspath(downloads + path)
+    abspath = os.path.abspath(downloads + path)
+    # need to check for backslash also for debugging on windows
+    return path in abspath or path.replace('/', '\\') in abspath
 
 
 # sanitizes file names for windows fs

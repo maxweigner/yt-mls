@@ -1,6 +1,6 @@
 /*
     - unique youtube id / watch key identifies the song
-    - id is nullable for todo: ingest from local dev
+    - id is nullable for ingest from filesystem
     - name is title of video
     - ext is the file extension / type
     - path is relative to 'project_root/downloads/'
@@ -24,16 +24,19 @@ CREATE TABLE IF NOT EXISTS video (
         example for folder:
             - 'playlist_name/'
             - 'playlist_name/playlist_ROWID/'
+    - url is nullable for manual ingest
  */
 CREATE TABLE IF NOT EXISTS playlist (
     folder TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    url TEXT UNIQUE NOT NULL
+    url TEXT UNIQUE
 );
 
 /*
     - playlist equals folder
-    - video equals id
+    - video equals id or rowid if from manual ingest
+        - you better hope you dont have a video id with
+            only numbers
     - simple n-m mapping
         (playlist contains multiple songs)
         (song can be in multiple playlists)
