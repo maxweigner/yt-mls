@@ -497,6 +497,9 @@ def manual_ingest():
             ext = '.' + file_split[-1]
             name = file[:-len(ext)]
 
+            if 'mp3' not in ext or 'mp4' not in ext:
+                continue
+
             # if file not already in db
             if not len(query_db_threaded('SELECT ROWID FROM video '
                                          'WHERE path = :path AND name = :name AND ext = :ext',
